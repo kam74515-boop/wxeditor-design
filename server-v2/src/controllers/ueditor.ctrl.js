@@ -55,37 +55,57 @@ const config = {
 };
 
 router.get('/', (req, res) => {
-  const { action } = req.query;
-  if (action === 'config') {
-    return res.json(config);
+  try {
+    const { action } = req.query;
+    if (action === 'config') {
+      return res.json(config);
+    }
+    res.status(400).json({ success: false, message: '未知 action' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
-  res.status(400).json({ success: false, message: '未知 action' });
 });
 
 router.post('/uploadimage', upload.single('upfile'), (req, res) => {
-  if (!req.file) return res.status(400).json({ state: '文件上传失败' });
-  const url = `/uploads/image/${req.file.filename}`;
-  res.json({ state: 'SUCCESS', url, title: req.file.originalname, original: req.file.originalname });
+  try {
+    if (!req.file) return res.status(400).json({ state: '文件上传失败' });
+    const url = `/uploads/image/${req.file.filename}`;
+    res.json({ state: 'SUCCESS', url, title: req.file.originalname, original: req.file.originalname });
+  } catch (err) {
+    res.status(500).json({ state: '上传失败', message: err.message });
+  }
 });
 
 router.post('/uploadvideo', upload.single('upfile'), (req, res) => {
-  if (!req.file) return res.status(400).json({ state: '文件上传失败' });
-  const url = `/uploads/video/${req.file.filename}`;
-  res.json({ state: 'SUCCESS', url, title: req.file.originalname, original: req.file.originalname });
+  try {
+    if (!req.file) return res.status(400).json({ state: '文件上传失败' });
+    const url = `/uploads/video/${req.file.filename}`;
+    res.json({ state: 'SUCCESS', url, title: req.file.originalname, original: req.file.originalname });
+  } catch (err) {
+    res.status(500).json({ state: '上传失败', message: err.message });
+  }
 });
 
 router.post('/uploadfile', upload.single('upfile'), (req, res) => {
-  if (!req.file) return res.status(400).json({ state: '文件上传失败' });
-  const url = `/uploads/file/${req.file.filename}`;
-  res.json({ state: 'SUCCESS', url, title: req.file.originalname, original: req.file.originalname });
+  try {
+    if (!req.file) return res.status(400).json({ state: '文件上传失败' });
+    const url = `/uploads/file/${req.file.filename}`;
+    res.json({ state: 'SUCCESS', url, title: req.file.originalname, original: req.file.originalname });
+  } catch (err) {
+    res.status(500).json({ state: '上传失败', message: err.message });
+  }
 });
 
 router.post('/upload', upload.single('upfile'), (req, res) => {
-  if (!req.file) return res.status(400).json({ state: '文件上传失败' });
-  const folder = req.file.mimetype.startsWith('image/') ? 'image' :
-    req.file.mimetype.startsWith('video/') ? 'video' : 'file';
-  const url = `/uploads/${folder}/${req.file.filename}`;
-  res.json({ state: 'SUCCESS', url, title: req.file.originalname, original: req.file.originalname });
+  try {
+    if (!req.file) return res.status(400).json({ state: '文件上传失败' });
+    const folder = req.file.mimetype.startsWith('image/') ? 'image' :
+      req.file.mimetype.startsWith('video/') ? 'video' : 'file';
+    const url = `/uploads/${folder}/${req.file.filename}`;
+    res.json({ state: 'SUCCESS', url, title: req.file.originalname, original: req.file.originalname });
+  } catch (err) {
+    res.status(500).json({ state: '上传失败', message: err.message });
+  }
 });
 
 module.exports = router;

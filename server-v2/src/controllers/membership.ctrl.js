@@ -26,10 +26,10 @@ router.post('/subscribe', auth, async (req, res) => {
   }
 });
 
-router.post('/verify-payment', async (req, res) => {
+router.post('/verify-payment', auth, async (req, res) => {
   try {
     const result = await MembershipService.verifyPayment(req.body);
-    res.json(result);
+    res.json({ success: result.success, data: result });
   } catch (err) {
     res.status(err.statusCode || 500).json({ success: false, message: err.message });
   }

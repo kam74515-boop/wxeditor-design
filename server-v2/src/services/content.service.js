@@ -1,5 +1,12 @@
 const ContentRepo = require('../repositories/content.repo');
-const DocumentService = require('./document.service');
+const { sanitizeContent } = require('../utils/sanitize');
+
+// 延迟加载避免循环依赖
+let _DocumentService = null;
+function getDocumentService() {
+  if (!_DocumentService) _DocumentService = require('./document.service');
+  return _DocumentService;
+}
 
 const ContentService = {
   async getPublicContent(params) {
@@ -22,7 +29,7 @@ const ContentService = {
   },
 
   async getDocumentDetail(id, user) {
-    return DocumentService.getDocument(id, user);
+    return getDocumentService().getDocument(id, user);
   },
 
   async getCategories() {
@@ -35,3 +42,4 @@ const ContentService = {
 };
 
 module.exports = ContentService;
+module.exports.sanitizeContent = sanitizeContent;

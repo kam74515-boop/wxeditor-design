@@ -1,5 +1,30 @@
 const MaterialRepo = require('../repositories/material.repo');
 const db = require('../config/db');
+const path = require('path');
+const fs = require('fs');
+
+// 允许的文件存储根目录（绝对路径）
+const ALLOWED_UPLOAD_ROOT = path.resolve(__dirname, '..', '..', 'public', 'uploads');
+
+/**
+ * validateFilePath - 验证文件路径不包含路径遍历且在允许目录下
+ * 防止通过 '..' 或符号链接逃逸到 uploads 目录之外
+ */
+function validateFilePath(filePath) {
+  if (!filePath || typeof filePath !== 'string') {
+    throw Object.assign(new Error('无效的文件路径'), { statusCode: 400 });
+  }
+  // 不允许路径遍历
+  if (filePath.includes('..')) {
+    throw Object.assign(new Error('文件路径不允许包含路径遍历'), { statusCode: 400 });
+  }
+  // 解析为绝对路径并验证在允许目录下
+  const resolved = path.resolve(filePath);
+  if (!resolved.startsWith(ALLOWED_UPLOAD_ROOT)) {
+    throw Object.assign(new Error('文件路径超出允许范围'), { statusCode: 400 });
+  }
+  return resolved;
+}
 
 function getFileType(mimeType) {
   if (mimeType.startsWith('image/')) return 'image';
@@ -20,6 +45,9 @@ const MaterialService = {
 
   async upload(file, data, user) {
     if (!file) throw Object.assign(new Error('请选择要上传的文件'), { statusCode: 400 });
+
+    // 验证上传文件路径在允许的 uploads 目录下
+    const resolvedPath = validateFilePath(file.path);
 
     const fileType = getFileType(file.mimetype);
     const relativePath = file.path.split('public')[1];
@@ -56,15 +84,22 @@ const MaterialService = {
     if (material.uploader_id !== user.id && user.role !== 'admin') {
       throw Object.assign(new Error('无权删除此素材'), { statusCode: 403 });
     }
-    const fs = require('fs');
-    if (fs.existsSync(material.file_path)) fs.unlinkSync(material.file_path);
+    // 验证文件路径安全
+    const safePath = validateFilePath(material.file_path);
+    if (fs.existsSync(safePath)) fs.unlinkSync(safePath);
     await MaterialRepo.delete(id);
   },
 
   async batchDelete(ids, user) {
     const materials = await db('materials').whereIn('id', ids).where({ uploader_id: user.id });
-    const fs = require('fs');
-    materials.forEach(m => { if (fs.existsSync(m.file_path)) fs.unlinkSync(m.file_path); });
+    materials.forEach(m => {
+      try {
+        const safePath = validateFilePath(m.file_path);
+        if (fs.existsSync(safePath)) fs.unlinkSync(safePath);
+      } catch (e) {
+        console.error('batchDelete path validation error:', e.message);
+      }
+    });
     return MaterialRepo.batchDelete(ids, user.id);
   },
 

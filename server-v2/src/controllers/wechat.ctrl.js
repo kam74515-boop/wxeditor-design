@@ -27,28 +27,40 @@ router.post('/login', async (req, res) => {
 });
 
 router.post('/logout', (req, res) => {
-  const { sessionId } = req.body;
-  const session = sessions.get(sessionId);
-  if (session) {
-    session.browser?.close();
-    sessions.delete(sessionId);
+  try {
+    const { sessionId } = req.body;
+    const session = sessions.get(sessionId);
+    if (session) {
+      session.browser?.close();
+      sessions.delete(sessionId);
+    }
+    res.json({ success: true, message: '已退出登录' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
-  res.json({ success: true, message: '已退出登录' });
 });
 
 router.get('/accounts', (req, res) => {
-  const accounts = [];
-  sessions.forEach((session, id) => {
-    accounts.push({ id, loginTime: session.loginTime, status: 'active' });
-  });
-  res.json({ success: true, data: accounts });
+  try {
+    const accounts = [];
+    sessions.forEach((session, id) => {
+      accounts.push({ id, loginTime: session.loginTime, status: 'active' });
+    });
+    res.json({ success: true, data: accounts });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
-router.get('/check-login', async (req, res) => {
-  const { sessionId } = req.query;
-  const session = sessions.get(sessionId);
-  if (!session) return res.status(401).json({ success: false, message: '会话不存在' });
-  res.json({ success: true, data: { status: 'active' } });
+router.get('/check-login', (req, res) => {
+  try {
+    const { sessionId } = req.query;
+    const session = sessions.get(sessionId);
+    if (!session) return res.status(401).json({ success: false, message: '会话不存在' });
+    res.json({ success: true, data: { status: 'active' } });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 module.exports = router;

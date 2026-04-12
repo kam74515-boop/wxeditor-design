@@ -1,5 +1,6 @@
 const DocumentRepo = require('../repositories/document.repo');
 const UserRepo = require('../repositories/user.repo');
+const { sanitizeContent } = require('../utils/sanitize');
 
 const MEMBERSHIP_LIMITS = {
   free: { documents: 3 },
@@ -36,6 +37,10 @@ const DocumentService = {
       throw Object.assign(new Error('发布会员专享内容需要会员权限'), { statusCode: 403 });
     }
 
+    // 清理 HTML 内容中的 XSS 向量
+    if (data.content) data.content = sanitizeContent(data.content);
+    if (data.summary) data.summary = sanitizeContent(data.summary);
+
     return DocumentRepo.create({ ...data, author_id: user.id });
   },
 
@@ -50,6 +55,10 @@ const DocumentService = {
     if (data.visibility === 'members_only' && !user.isMember) {
       throw Object.assign(new Error('发布会员专享内容需要会员权限'), { statusCode: 403 });
     }
+
+    // 清理 HTML 内容中的 XSS 向量
+    if (data.content) data.content = sanitizeContent(data.content);
+    if (data.summary) data.summary = sanitizeContent(data.summary);
 
     return DocumentRepo.update(id, data);
   },

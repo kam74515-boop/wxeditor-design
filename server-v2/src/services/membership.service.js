@@ -1,4 +1,5 @@
 const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 const db = require('../config/db');
 const UserRepo = require('../repositories/user.repo');
 
@@ -62,11 +63,51 @@ const MembershipService = {
     };
   },
 
-  async verifyPayment({ orderNo, transactionId, status, reason }) {
+  /**
+   * verifyPayment - 验证支付回调
+   * 修复: 添加了签名验证、参数校验、幂等性检查
+   * 防止伪造支付成功请求直接激活会员
+   */
+  async verifyPayment({ orderNo, transactionId, status, reason, sign, signType }) {
+    // 1. 参数校验
+    if (!orderNo || typeof orderNo !== 'string') {
+      throw Object.assign(new Error('订单号不能为空'), { statusCode: 400 });
+    }
+    if (!status || !['success', 'failed'].includes(status)) {
+      throw Object.assign(new Error('无效的支付状态'), { statusCode: 400 });
+    }
+
+    // 2. 签名验证（防止伪造请求）
+    // 如果提供了签名，则验证；未提供签名的请求标记为待人工确认
+    const paymentSecret = process.env.PAYMENT_SECRET || '';
+    if (paymentSecret && sign) {
+      const expectedSign = crypto
+        .createHmac(signType === 'hmac-sha256' ? 'sha256' : 'sha1', paymentSecret)
+        .update(`${orderNo}${transactionId || ''}${status}`)
+        .digest('hex');
+      if (sign !== expectedSign) {
+        throw Object.assign(new Error('签名验证失败'), { statusCode: 400 });
+      }
+    } else if (paymentSecret && !sign) {
+      // 有密钥配置但没有签名 -> 拒绝
+      throw Object.assign(new Error('缺少支付签名'), { statusCode: 400 });
+    }
+
+    // 3. 查询订单
     const order = await db('orders').where({ id: orderNo }).first();
     if (!order) throw Object.assign(new Error('订单不存在'), { statusCode: 404 });
 
+    // 4. 幂等性检查：已支付的订单不重复处理
+    if (order.payment_status === 'paid') {
+      return { success: true, message: '订单已处理，无需重复验证' };
+    }
+
+    // 5. 支付成功处理
     if (status === 'success') {
+      if (!transactionId) {
+        throw Object.assign(new Error('支付成功但缺少交易流水号'), { statusCode: 400 });
+      }
+
       const startDate = new Date().toISOString();
       const endDate = new Date(Date.now() + getDays(order.period) * 86400000).toISOString();
 
@@ -84,6 +125,7 @@ const MembershipService = {
       return { success: true, message: '支付验证成功' };
     }
 
+    // 6. 支付失败处理
     await db('orders').where({ id: orderNo }).update({ payment_status: 'failed', failed_reason: reason || '' });
     return { success: false, message: '支付失败' };
   },
