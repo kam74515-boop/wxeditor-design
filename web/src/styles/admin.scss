@@ -1,0 +1,305 @@
+/**
+ * admin.scss — 管理后台样式
+ * 
+ * 对应设计稿: 12-管理后台（深色 Sidebar + 白色 Main）
+ */
+
+// 管理后台整体布局
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+  background: $layout-light-bg;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  padding: $page-padding;
+  gap: $block-gap;
+}
+
+// 深色侧边栏
+.admin-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: $layout-sider-dark;
+  border-radius: $block-radius-lg;
+  padding: 24px 16px;
+  gap: 4px;
+
+  &__logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 8px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 8px;
+
+    .icon {
+      width: 20px;
+      height: 20px;
+      color: $brand-yellow;
+    }
+
+    span {
+      font-size: 16px;
+      font-weight: 800;
+      color: #FFFFFF;
+    }
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    transition: background 150ms ease, color 150ms ease;
+    text-decoration: none;
+
+    .icon {
+      width: 16px;
+      height: 16px;
+    }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    &--active {
+      background: rgba(255, 255, 255, 0.08);
+      color: #FFFFFF;
+      font-weight: 700;
+    }
+  }
+}
+
+// 管理后台主内容
+.admin-main {
+  flex: 1;
+  background: #FFFFFF;
+  border-radius: 12px 12px 0 0;
+  padding: 28px;
+  overflow-y: auto;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  &__title {
+    font-size: 22px;
+    font-weight: 800;
+    color: $layout-sider-dark;
+  }
+
+  &__desc {
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.4);
+    margin-bottom: 24px;
+  }
+}
+
+// AI 配置卡片
+.ai-config-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.ai-config-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  border-radius: $block-radius-lg;
+  background: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: box-shadow 200ms ease;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  }
+
+  &--active {
+    border: 2px solid $success;
+  }
+
+  &__left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &--purple { background: $macaron-purple; }
+    &--blue { background: $macaron-blue; }
+    &--green { background: $macaron-green; }
+    &--pink { background: $macaron-pink; }
+
+    .icon {
+      width: 20px;
+      height: 20px;
+      color: $layout-sider-dark;
+    }
+  }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__name {
+    font-size: 15px;
+    font-weight: 700;
+    color: $layout-sider-dark;
+  }
+
+  &__model {
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.4);
+
+    &--connected {
+      color: $success;
+      font-weight: 600;
+    }
+  }
+
+  &__right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__status {
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+
+    &--active {
+      background: #DCFCE7;
+      color: $success;
+    }
+
+    &--standby {
+      background: #F0F3F8;
+      color: rgba(0, 0, 0, 0.4);
+    }
+
+    &--error {
+      background: #FEE2E2;
+      color: $error;
+    }
+  }
+}
+
+// 模型参数网格
+.param-grid {
+  display: flex;
+  gap: 12px;
+
+  .param-card {
+    flex: 1;
+    padding: 16px;
+    border-radius: $block-radius-lg;
+    background: rgba(240, 243, 248, 0.4);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    &__label {
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(0, 0, 0, 0.4);
+    }
+
+    &__value {
+      font-size: 20px;
+      font-weight: 800;
+      color: $layout-sider-dark;
+    }
+  }
+}
+
+// 添加按钮
+.btn-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  height: 32px;
+  border-radius: 8px;
+  background: #FFD60A;
+  color: $layout-sider-dark;
+  font-size: 12px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: opacity 150ms ease;
+
+  &:hover { opacity: 0.85; }
+
+  .icon {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+// 用户管理表格
+.admin-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+
+  th {
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.4);
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  td {
+    padding: 14px 16px;
+    font-size: 14px;
+    color: $layout-sider-dark;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  }
+
+  tr:hover td {
+    background: rgba(0, 0, 0, 0.01);
+  }
+}
+
+// 角色标签
+.role-tag {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+
+  &--admin { background: #FEE2E2; color: #DC2626; }
+  &--vip { background: #FEF3C7; color: #D97706; }
+  &--user { background: #F0F3F8; color: rgba(0,0,0,0.5); }
+  &--superadmin { background: #EDE9FE; color: #7C3AED; }
+}

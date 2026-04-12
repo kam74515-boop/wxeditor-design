@@ -1,0 +1,314 @@
+<!-- 12-点击飞机 -->
+<!-- SVG互动效果 -->
+<!-- 点击飞机，随每段旅行路线飞行；飞机到达每一站点时，点击问号，出现旅行照片。 使用组件 -->
+<!-- SVG布局、SVG动画 使用功能 -->
+<!-- 组件触发、分段展开、同步点中下一页、路径动画、淡入 -->
+
+<section style="margin: 10px 0px; position: static; box-sizing: border-box;">
+        <section style="display: inline-block; width: 100%; vertical-align: top; overflow: hidden; align-self: flex-start; font-family: &quot;Noto Sans CJK SC&quot;, -apple-system-font, BlinkMacSystemFont, &quot;Helvetica Neue&quot;, &quot;PingFang SC&quot;, &quot;Hiragino Sans GB&quot;, &quot;Microsoft YaHei UI&quot;, &quot;Microsoft YaHei&quot;, Arial, sans-serif; letter-spacing: 0.034em; box-sizing: border-box;">
+            <section style="position: static; height: 0px; overflow: visible; box-sizing: border-box;">
+                <section style="justify-content: flex-start; display: flex; flex-flow: row; position: static; box-sizing: border-box;">
+                    <section style="display: inline-block; width: 100%; vertical-align: top; align-self: flex-start; flex: 0 0 auto; box-sizing: border-box;">
+                        <section style="display: inline-block; width: 100%; vertical-align: top; overflow: hidden; align-self: flex-start; font-family: &quot;Noto Sans CJK SC&quot;, -apple-system-font, BlinkMacSystemFont, &quot;Helvetica Neue&quot;, &quot;PingFang SC&quot;, &quot;Hiragino Sans GB&quot;, &quot;Microsoft YaHei UI&quot;, &quot;Microsoft YaHei&quot;, Arial, sans-serif; letter-spacing: 0.034em; box-sizing: border-box;">
+                            <section style="position: static; height: 0px; overflow: visible; box-sizing: border-box;">
+                                <section style="justify-content: flex-start; display: flex; flex-flow: row; position: static; box-sizing: border-box;">
+                                    <section class="group-empty" style="display: inline-block; width: 100%; vertical-align: top; align-self: flex-start; flex: 0 0 auto; box-sizing: border-box;">
+                                        <svg viewBox="0 0 1 1" style="float:left;line-height:0;width:0;vertical-align:top;"></svg>
+                                    </section>
+                                </section>
+                            </section>
+                            <section style="position: static; height: 0px; overflow: visible; box-sizing: border-box;">
+                                <section style="width: 100%; height: auto; box-sizing: border-box;">
+                                    <section class="top-div" style="height: 0px; box-sizing: border-box;">
+                                        <svg class="svg-layout-content root-svg" width="100.00%" xmlns="http://www.w3.org/2000/svg" style="box-sizing: border-box; transform: rotateZ(0deg); -webkit-transform: rotateZ(0deg); -moz-transform: rotateZ(0deg); -o-transform: rotateZ(0deg); width: 100%;" viewBox="0 0 1080 6249">
+                                            <svg width="100%" height="100%" style="box-sizing: border-box;">
+                                                <svg class="rect-content" width="100%" height="100%" style="box-sizing: border-box;">
+                                                    <rect fill="rgb(240, 246, 252)" width="100%" height="100%" style="box-sizing: border-box;" x="0%" y="0%"></rect>
+                                                </svg>
+                                                <svg x="48.67%" y="12.12%" width="5.78%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="1.00%" class="svg-content">
+                                                    <foreignObject width="100%" height="100%" x="0%" y="0%" style="box-sizing: border-box;">
+                                                        <svg viewBox="0 0 600 600" xlink="http://www.w3.org/1999/xlink" xml="" xmlns="http://www.w3.org/2000/svg" space="default" style="display: block; width: 100%; background-position: 0% 0%; background-repeat: no-repeat; background-size: cover; background-attachment: scroll; -webkit-tap-highlight-color: transparent; visibility: visible; pointer-events: none; background-image: url(&quot;https://statics.xiumi.us/stc/images/templates-assets/tpl-paper/image/3ca1323b2290d3543712d002492dbb97-sz_5187.png&quot;); box-sizing: border-box; user-select: none;"></svg>
+                                                    </foreignObject>
+                                                </svg>
+                                                <g stroke-dasharray="8698.792649599998,8698.792649599998" stroke-dashoffset="8698.792649599998" class="elem-animation-not-compatible-with-in-out-animation elem-with-animation elem-with-interaction-animation sync-triggered-elems-wrapper-elem" style=" transform: translate(51.445%, 12.68%); -webkit-transform: translate(51.445%, 12.68%); -moz-transform: translate(51.445%, 12.68%); -o-transform: translate(51.445%, 12.68%); box-sizing: border-box;">
+                                                    <animate style="box-sizing: border-box;" fill="freeze" attributeName="stroke-dashoffset" begin="click" dur="16" keyTimes="0;1" values="8698.792649599998;0" restart="never" attributeType="CSS"></animate>
+                                                    <path d=" m0 0 c210.0615938799414 0 345.1559690775988 62.894349780380665 346.46840931185943 264.1878941434846 c2.4272238067349923 372.52746360175695 -672.1828691361641 337.26551513909214 -693.1661003513909 559.3051027232796 c-29.182029546120052 308.73970571010244 614.0401855051243 181.36184658857977 588.6610701317715 482.6301304831625 c-19.939604040995604 236.66618055636891 -446.5538365739384 142.4946406149341 -519.4100821083455 422.80341209370414 c-70.80061625183015 272.4104112737921 227.43166131771596 749.102935636896 491.0740230746705 733.922904011713 c95.3970112445095 -5.494855197657393 144.1075189751098 -86.19411707174231 152.1481919765739 -176.83155590043924 c9.487519765739384 -106.90062896046852 -64.57047827232796 -227.6214117130307 -180.48425101024887 -241.979191625183 c-295.41764670571007 -36.59810749633967 -659.3747174524158 338.08776685212297 -579.5530511566617 602.6235367203514 c86.10714814055635 285.3529694875549 661.9284415226939 229.68494726207902 689.7347807027819 502.2455775988287 c29.86987472913616 292.7848599707174 -674.1831545534407 267.2397130014641 -644.8034683455343 562.4043591800878 c26.264617218155195 263.87954975109807 614.8703434846266 268.9158414934114 656.8684309809663 470.66794931185933 c35.151260732064415 168.85413303074668 -357.90877689604685 19.92379150805271 -340.59405332357244 327.0585251244509" fill="none" stroke="rgb(255,255,255)" stroke-width="44" stroke-miterlimit="10" style="box-sizing: border-box;"></path>
+                                                    <g style="box-sizing: border-box;">
+                                                        <svg x="-14.335%" y="-2.23%" width="28.67%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; pointer-events: none; box-sizing: border-box;" height="4.46%" class="svg-content" opacity="1">
+                                                            <foreignObject width="100%" height="100%" x="0%" y="0%" style="box-sizing: border-box;">
+                                                                <svg viewBox="0 0 403 363" xlink="http://www.w3.org/1999/xlink" xml="" xmlns="http://www.w3.org/2000/svg" space="default" style="display: block; width: 100%; background-position: 0% 0%; background-repeat: no-repeat; background-size: cover; background-attachment: scroll; -webkit-tap-highlight-color: transparent; visibility: visible; background-image: url(&quot;https://statics.xiumi.us/stc/images/templates-assets/tpl-paper/image/f52fbf43f6c03fb9499c6072dcde71f0-sz_6007.png&quot;); box-sizing: border-box; user-select: none;"></svg>
+                                                            </foreignObject>
+                                                            <rect class="self-trigger-area elem-self-trigger-area" width="100%" height="100%" fill="transparent" style="pointer-events: auto; box-sizing: border-box;"></rect>
+                                                        </svg>
+                                                        <animateMotion style="box-sizing: border-box;" fill="freeze" begin="click" dur="16" restart="never" path=" m0 0 c210.0615938799414 0 345.1559690775988 62.894349780380665 346.46840931185943 264.1878941434846 c2.4272238067349923 372.52746360175695 -672.1828691361641 337.26551513909214 -693.1661003513909 559.3051027232796 c-29.182029546120052 308.73970571010244 614.0401855051243 181.36184658857977 588.6610701317715 482.6301304831625 c-19.939604040995604 236.66618055636891 -446.5538365739384 142.4946406149341 -519.4100821083455 422.80341209370414 c-70.80061625183015 272.4104112737921 227.43166131771596 749.102935636896 491.0740230746705 733.922904011713 c95.3970112445095 -5.494855197657393 144.1075189751098 -86.19411707174231 152.1481919765739 -176.83155590043924 c9.487519765739384 -106.90062896046852 -64.57047827232796 -227.6214117130307 -180.48425101024887 -241.979191625183 c-295.41764670571007 -36.59810749633967 -659.3747174524158 338.08776685212297 -579.5530511566617 602.6235367203514 c86.10714814055635 285.3529694875549 661.9284415226939 229.68494726207902 689.7347807027819 502.2455775988287 c29.86987472913616 292.7848599707174 -674.1831545534407 267.2397130014641 -644.8034683455343 562.4043591800878 c26.264617218155195 263.87954975109807 614.8703434846266 268.9158414934114 656.8684309809663 470.66794931185933 c35.151260732064415 168.85413303074668 -357.90877689604685 19.92379150805271 -340.59405332357244 327.0585251244509" rotate="auto"></animateMotion>
+                                                    </g>
+                                                </g>
+                                                <svg x="9.88%" y="28.55%" width="39.04%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="6.73%" class="svg-content">
+                                                    <foreignObject width="100%" height="100%" x="0%" y="0%" style="box-sizing: border-box;">
+                                                        <svg viewBox="0 0 508 507" xlink="http://www.w3.org/1999/xlink" xml="" xmlns="http://www.w3.org/2000/svg" space="default" style="display: block; width: 100%; background-position: 0% 0%; background-repeat: no-repeat; background-size: cover; background-attachment: scroll; -webkit-tap-highlight-color: transparent; user-select: none; visibility: visible; pointer-events: none; background-image: url(&quot;https://statics.xiumi.us/stc/images/templates-assets/tpl-paper/image/09b8a8c08dafb3b4c3a882140e55c148-sz_15881.png&quot;); box-sizing: border-box;-webkit-user-select: none;"></svg>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="47.23%" y="42.54%" width="43.13%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="7.47%" class="svg-content">
+                                                    <foreignObject width="100%" height="100%" x="0%" y="0%" style="box-sizing: border-box;">
+                                                        <svg viewBox="0 0 570 571" xlink="http://www.w3.org/1999/xlink" xml="" xmlns="http://www.w3.org/2000/svg" space="default" style="display: block; width: 100%; background-position: 0% 0%; background-repeat: no-repeat; background-size: cover; background-attachment: scroll; -webkit-tap-highlight-color: transparent; user-select: none; visibility: visible; pointer-events: none; background-image: url(&quot;https://statics.xiumi.us/stc/images/templates-assets/tpl-paper/image/731f6957a524c6c2515ece4f8f3c6a4e-sz_17426.png&quot;); box-sizing: border-box;-webkit-user-select: none;"></svg>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="48.92%" y="16.95%" width="46.75%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="8.49%" class="svg-content">
+                                                    <foreignObject width="100%" height="100%" x="0%" y="0%" style="box-sizing: border-box;">
+                                                        <svg viewBox="0 0 634 666" xlink="http://www.w3.org/1999/xlink" xml="" xmlns="http://www.w3.org/2000/svg" space="default" style="display: block; width: 100%; background-position: 0% 0%; background-repeat: no-repeat; background-size: cover; background-attachment: scroll; -webkit-tap-highlight-color: transparent; visibility: visible; pointer-events: none; background-image: url(&quot;https://statics.xiumi.us/stc/images/templates-assets/tpl-paper/image/584858449e7ffa648c07f30b8d37aea2-sz_34270.png&quot;); box-sizing: border-box; user-select: none;"></svg>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="6.02%" y="54.35%" width="50.12%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="9.10%" class="svg-content">
+                                                    <foreignObject width="100%" height="100%" x="0%" y="0%" style="box-sizing: border-box;">
+                                                        <svg viewBox="0 0 634 666" xlink="http://www.w3.org/1999/xlink" xml="" xmlns="http://www.w3.org/2000/svg" space="default" style="display: block; width: 100%; background-position: 0% 0%; background-repeat: no-repeat; background-size: cover; background-attachment: scroll; -webkit-tap-highlight-color: transparent; visibility: visible; pointer-events: none; background-image: url(&quot;https://statics.xiumi.us/stc/images/templates-assets/tpl-paper/image/584858449e7ffa648c07f30b8d37aea2-sz_34270.png&quot;); box-sizing: border-box; user-select: none;"></svg>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="45.06%" y="69.70%" width="43.13%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="7.44%" class="svg-content">
+                                                    <foreignObject width="100%" height="100%" x="0%" y="0%" style="box-sizing: border-box;">
+                                                        <svg viewBox="0 0 508 507" xlink="http://www.w3.org/1999/xlink" xml="" xmlns="http://www.w3.org/2000/svg" space="default" style="display: block; width: 100%; background-position: 0% 0%; background-repeat: no-repeat; background-size: cover; background-attachment: scroll; -webkit-tap-highlight-color: transparent; user-select: none; visibility: visible; pointer-events: none; background-image: url(&quot;https://statics.xiumi.us/stc/images/templates-assets/tpl-paper/image/09b8a8c08dafb3b4c3a882140e55c148-sz_15881.png&quot;); box-sizing: border-box;-webkit-user-select: none;"></svg>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="66.27%" y="18.84%" width="12.77%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="7.39%" class="svg-content">
+                                                    <foreignObject width="100%" height="100%" x="0%" y="0%" style="box-sizing: border-box;">
+                                                        <svg viewBox="0 0 357 1195" xlink="http://www.w3.org/1999/xlink" xml="" xmlns="http://www.w3.org/2000/svg" space="default" style="display: block; width: 100%; background-position: 0% 0%; background-repeat: no-repeat; background-size: cover; background-attachment: scroll; -webkit-tap-highlight-color: transparent; user-select: none; visibility: visible; pointer-events: none; background-image: url(&quot;https://statics.xiumi.us/stc/images/templates-assets/tpl-paper/image/cbfae953098785171a1928685bfa9d32-sz_7189.png&quot;); box-sizing: border-box;-webkit-user-select: none;"></svg>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="22.65%" y="29.50%" width="12.77%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="7.39%" class="svg-content">
+                                                    <foreignObject width="100%" height="100%" x="0%" y="0%" style="box-sizing: border-box;">
+                                                        <svg viewBox="0 0 357 1195" xlink="http://www.w3.org/1999/xlink" xml="" xmlns="http://www.w3.org/2000/svg" space="default" style="display: block; width: 100%; background-position: 0% 0%; background-repeat: no-repeat; background-size: cover; background-attachment: scroll; -webkit-tap-highlight-color: transparent; user-select: none; visibility: visible; pointer-events: none; background-image: url(&quot;https://statics.xiumi.us/stc/images/templates-assets/tpl-paper/image/cbfae953098785171a1928685bfa9d32-sz_7189.png&quot;); box-sizing: border-box;-webkit-user-select: none;"></svg>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="61.93%" y="43.87%" width="12.77%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="7.39%" class="svg-content">
+                                                    <foreignObject width="100%" height="100%" x="0%" y="0%" style="box-sizing: border-box;">
+                                                        <svg viewBox="0 0 357 1195" xlink="http://www.w3.org/1999/xlink" xml="" xmlns="http://www.w3.org/2000/svg" space="default" style="display: block; width: 100%; background-position: 0% 0%; background-repeat: no-repeat; background-size: cover; background-attachment: scroll; -webkit-tap-highlight-color: transparent; user-select: none; visibility: visible; pointer-events: none; background-image: url(&quot;https://statics.xiumi.us/stc/images/templates-assets/tpl-paper/image/cbfae953098785171a1928685bfa9d32-sz_7189.png&quot;); box-sizing: border-box;-webkit-user-select: none;"></svg>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="24.82%" y="56.45%" width="12.77%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="7.39%" class="svg-content">
+                                                    <foreignObject width="100%" height="100%" x="0%" y="0%" style="box-sizing: border-box;">
+                                                        <svg viewBox="0 0 357 1195" xlink="http://www.w3.org/1999/xlink" xml="" xmlns="http://www.w3.org/2000/svg" space="default" style="display: block; width: 100%; background-position: 0% 0%; background-repeat: no-repeat; background-size: cover; background-attachment: scroll; -webkit-tap-highlight-color: transparent; user-select: none; visibility: visible; pointer-events: none; background-image: url(&quot;https://statics.xiumi.us/stc/images/templates-assets/tpl-paper/image/cbfae953098785171a1928685bfa9d32-sz_7189.png&quot;); box-sizing: border-box;-webkit-user-select: none;"></svg>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="59.28%" y="70.95%" width="12.77%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="7.39%" class="svg-content">
+                                                    <foreignObject width="100%" height="100%" x="0%" y="0%" style="box-sizing: border-box;">
+                                                        <svg viewBox="0 0 357 1195" xlink="http://www.w3.org/1999/xlink" xml="" xmlns="http://www.w3.org/2000/svg" space="default" style="display: block; width: 100%; background-position: 0% 0%; background-repeat: no-repeat; background-size: cover; background-attachment: scroll; -webkit-tap-highlight-color: transparent; user-select: none; visibility: visible; pointer-events: none; background-image: url(&quot;https://statics.xiumi.us/stc/images/templates-assets/tpl-paper/image/cbfae953098785171a1928685bfa9d32-sz_7189.png&quot;); box-sizing: border-box;-webkit-user-select: none;"></svg>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="13.01%" y="1.67%" width="57.35%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="3.32%" class="svg-content">
+                                                    <foreignObject width="100%" height="100%" x="0%" y="0%" style="box-sizing: border-box;">
+                                                        <svg viewBox="0 0 787 264" xlink="http://www.w3.org/1999/xlink" xml="" xmlns="http://www.w3.org/2000/svg" space="default" style="display: block; width: 100%; background-position: 0% 0%; background-repeat: no-repeat; background-size: cover; background-attachment: scroll; -webkit-tap-highlight-color: transparent; user-select: none; visibility: visible; pointer-events: none; background-image: url(&quot;https://statics.xiumi.us/stc/images/templates-assets/tpl-paper/image/feb2fe8570f4b5f3cfc2ac6a3b9b464f-sz_2906.png&quot;); box-sizing: border-box;-webkit-user-select: none;"></svg>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="10.12%" y="1.79%" width="60.60%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="2.88%" class="text-content">
+                                                    <foreignObject width="100%" height="100%" style="pointer-events: none; color: rgb(52, 54, 60); font-size: 113px; text-align: center; box-sizing: border-box;">
+                                                        <p style="margin-top: 0px; margin-bottom: 0px; padding: 0px; box-sizing: border-box;">
+                                                            <strong style="box-sizing: border-box;">解锁我的</strong>
+                                                        </p>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="27.95%" y="3.79%" width="60.60%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="2.86%" class="text-content">
+                                                    <foreignObject width="100%" height="100%" style="pointer-events: none; color: rgb(52, 54, 60); font-size: 112px; text-align: center; box-sizing: border-box;">
+                                                        <p style="margin-top: 0px; margin-bottom: 0px; padding: 0px; box-sizing: border-box;">
+                                                            {旅行日记}
+                                                        </p>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="22.89%" y="4.29%" width="10.60%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="0.71%" class="svg-content">
+                                                    <foreignObject width="100%" height="100%" x="0%" y="0%" style="box-sizing: border-box;">
+                                                        <svg viewBox="0 0 807 311" xlink="http://www.w3.org/1999/xlink" xml="" xmlns="http://www.w3.org/2000/svg" space="default" style="display: block; width: 100%; background-position: 0% 0%; background-repeat: no-repeat; background-size: cover; background-attachment: scroll; -webkit-tap-highlight-color: transparent; user-select: none; visibility: visible; pointer-events: none; background-image: url(&quot;https://statics.xiumi.us/stc/images/templates-assets/tpl-paper/image/a9b20bb2ccb7eb68dd64c87cf9667368-sz_3769.png&quot;); box-sizing: border-box;-webkit-user-select: none;"></svg>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="25.30%" y="4.38%" width="7.35%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="0.53%" class="text-content">
+                                                    <foreignObject width="100%" height="100%" style="pointer-events: none; color: rgb(255, 255, 255); font-size: 21px; text-align: center; box-sizing: border-box;">
+                                                        <p style="margin-top: 0px; margin-bottom: 0px; padding: 0px; box-sizing: border-box;">
+                                                            Travel
+                                                        </p>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="13.98%" y="10.79%" width="23.86%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="2.84%" class="svg-content">
+                                                    <foreignObject width="100%" height="100%" x="0%" y="0%" style="box-sizing: border-box;">
+                                                        <svg viewBox="0 0 321 221" xlink="http://www.w3.org/1999/xlink" xml="" xmlns="http://www.w3.org/2000/svg" space="default" style="display: block; width: 100%; background-position: 0% 0%; background-repeat: no-repeat; background-size: cover; background-attachment: scroll; -webkit-tap-highlight-color: transparent; user-select: none; visibility: visible; pointer-events: none; background-image: url(&quot;https://statics.xiumi.us/stc/images/templates-assets/tpl-paper/image/1ebbd24edaf9d6667a26ee4065f62e44-sz_3105.png&quot;); box-sizing: border-box;-webkit-user-select: none;"></svg>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="13.25%" y="29.11%" width="32.29%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; pointer-events: none; box-sizing: border-box;" height="5.58%" class="svg-content elem-with-animation elem-with-interaction-animation" opacity="0">
+                                                    <foreignObject width="100%" height="100%" x="0%" y="0%" style="box-sizing: border-box;">
+                                                        <svg viewBox="0 0 720 720" xlink="http://www.w3.org/1999/xlink" xml="" xmlns="http://www.w3.org/2000/svg" space="default" style="display: block; width: 100%; background-position: 0% 0%; background-repeat: no-repeat; background-size: cover; background-attachment: scroll; -webkit-tap-highlight-color: transparent; user-select: none; visibility: visible; background-image: url(&quot;https://statics.xiumi.us/mat/i/fvId/dfba60818059536525b5b2e6acf35483_sz-656559.jpg?x-oss-process=image/resize,limit_1,m_lfit,w_1080/crop,h_720,w_720,x_180,y_0&quot;); box-sizing: border-box;-webkit-user-select: none;"></svg>
+                                                    </foreignObject>
+                                                    <rect class="self-trigger-area elem-self-trigger-area" width="100%" height="100%" fill="transparent" style="pointer-events: auto; box-sizing: border-box;"></rect>
+                                                    <animate style="box-sizing: border-box;" fill="freeze" attributeName="opacity" begin="click" dur="1500" restart="never" keyTimes="0;0.0004;1" values="0;1;1" elem-animation-type="FadeIn"></animate>
+                                                </svg>
+                                                <svg x="69.88%" y="34.44%" width="39.52%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="4.45%" class="svg-content">
+                                                    <foreignObject width="100%" height="100%" x="0%" y="0%" style="box-sizing: border-box;">
+                                                        <svg viewBox="0 0 500 326" xlink="http://www.w3.org/1999/xlink" xml="" xmlns="http://www.w3.org/2000/svg" space="default" style="display: block; width: 100%; background-position: 0% 0%; background-repeat: no-repeat; background-size: cover; background-attachment: scroll; -webkit-tap-highlight-color: transparent; user-select: none; visibility: visible; pointer-events: none; background-image: url(&quot;https://statics.xiumi.us/stc/images/templates-assets/tpl-paper/image/faaac91a064b97ef24a886c9e371c962-sz_6686.png&quot;); box-sizing: border-box;-webkit-user-select: none;"></svg>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="50.60%" y="43.13%" width="36.39%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; pointer-events: none; box-sizing: border-box;" height="6.29%" class="svg-content elem-with-animation elem-with-interaction-animation" opacity="0">
+                                                    <foreignObject width="100%" height="100%" x="0%" y="0%" style="box-sizing: border-box;">
+                                                        <svg viewBox="0 0 704 704" xlink="http://www.w3.org/1999/xlink" xml="" xmlns="http://www.w3.org/2000/svg" space="default" style="display: block; width: 100%; background-position: 0% 0%; background-repeat: no-repeat; background-size: cover; background-attachment: scroll; -webkit-tap-highlight-color: transparent; visibility: visible; background-image: url(&quot;https://statics.xiumi.us/stc/images/templates-assets/tpl-paper/image/375e51e1f44302016f9483aaf7bea889-sz_300554.png&quot;); box-sizing: border-box; user-select: none;"></svg>
+                                                    </foreignObject>
+                                                    <rect class="self-trigger-area elem-self-trigger-area" width="100%" height="100%" fill="transparent" style="pointer-events: auto; box-sizing: border-box;"></rect>
+                                                    <animate style="box-sizing: border-box;" fill="freeze" attributeName="opacity" begin="click" dur="1500" restart="never" keyTimes="0;0.0004;1" values="0;1;1" elem-animation-type="FadeIn"></animate>
+                                                </svg>
+                                                <svg x="53.98%" y="18.24%" width="37.35%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; pointer-events: none; box-sizing: border-box;" height="6.46%" class="svg-content elem-with-animation elem-with-interaction-animation" opacity="0">
+                                                    <foreignObject width="100%" height="100%" x="0%" y="0%" style="box-sizing: border-box;">
+                                                        <svg viewBox="0 0 1052 1053" xlink="http://www.w3.org/1999/xlink" xml="" xmlns="http://www.w3.org/2000/svg" space="default" style="display: block; width: 100%; background-position: 0% 0%; background-repeat: no-repeat; background-size: cover; background-attachment: scroll; -webkit-tap-highlight-color: transparent; visibility: visible; background-image: url(&quot;https://statics.xiumi.us/stc/images/templates-assets/tpl-paper/image/1e2a37ca23d720fd64df1131023e8073-sz_571706.png&quot;); box-sizing: border-box; user-select: none;"></svg>
+                                                    </foreignObject>
+                                                    <rect class="self-trigger-area elem-self-trigger-area" width="100%" height="100%" fill="transparent" style="pointer-events: auto; box-sizing: border-box;"></rect>
+                                                    <animate style="box-sizing: border-box;" fill="freeze" attributeName="opacity" begin="click" dur="1500" restart="never" keyTimes="0;0.0004;1" values="0;1;1" elem-animation-type="FadeIn"></animate>
+                                                </svg>
+                                                <svg x="74.70%" y="23.51%" width="18.79%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="1.25%" class="svg-content">
+                                                    <foreignObject width="100%" height="100%" x="0%" y="0%" style="box-sizing: border-box;">
+                                                        <svg viewBox="0 0 807 311" xlink="http://www.w3.org/1999/xlink" xml="" xmlns="http://www.w3.org/2000/svg" space="default" style="display: block; width: 100%; background-position: 0% 0%; background-repeat: no-repeat; background-size: cover; background-attachment: scroll; -webkit-tap-highlight-color: transparent; user-select: none; visibility: visible; pointer-events: none; background-image: url(&quot;https://statics.xiumi.us/stc/images/templates-assets/tpl-paper/image/a9b20bb2ccb7eb68dd64c87cf9667368-sz_3769.png&quot;); box-sizing: border-box;-webkit-user-select: none;"></svg>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="78.07%" y="23.63%" width="14.34%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="1.03%" class="text-content">
+                                                    <foreignObject width="100%" height="100%" style="pointer-events: none; color: rgb(255, 255, 255); font-size: 40px; text-align: center; box-sizing: border-box;">
+                                                        <p style="margin-top: 0px; margin-bottom: 0px; padding: 0px; box-sizing: border-box;">
+                                                            No.1
+                                                        </p>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="11.08%" y="55.64%" width="40.72%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; pointer-events: none; box-sizing: border-box;" height="7.04%" class="svg-content elem-with-animation elem-with-interaction-animation" opacity="0">
+                                                    <foreignObject width="100%" height="100%" x="0%" y="0%" style="box-sizing: border-box;">
+                                                        <svg viewBox="0 0 690 690" xlink="http://www.w3.org/1999/xlink" xml="" xmlns="http://www.w3.org/2000/svg" space="default" style="display: block; width: 100%; background-position: 0% 0%; background-repeat: no-repeat; background-size: cover; background-attachment: scroll; -webkit-tap-highlight-color: transparent; visibility: visible; background-image: url(&quot;https://statics.xiumi.us/stc/images/templates-assets/tpl-paper/image/d2352fa45af67f1e14917901c73e74ed-sz_402793.png&quot;); box-sizing: border-box; user-select: none;"></svg>
+                                                    </foreignObject>
+                                                    <rect class="self-trigger-area elem-self-trigger-area" width="100%" height="100%" fill="transparent" style="pointer-events: auto; box-sizing: border-box;"></rect>
+                                                    <animate style="box-sizing: border-box;" fill="freeze" attributeName="opacity" begin="click" dur="1500" restart="never" keyTimes="0;0.0004;1" values="0;1;1" elem-animation-type="FadeIn"></animate>
+                                                </svg>
+                                                <svg x="35.90%" y="61.24%" width="18.79%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="1.25%" class="svg-content">
+                                                    <foreignObject width="100%" height="100%" x="0%" y="0%" style="box-sizing: border-box;">
+                                                        <svg viewBox="0 0 807 311" xlink="http://www.w3.org/1999/xlink" xml="" xmlns="http://www.w3.org/2000/svg" space="default" style="display: block; width: 100%; background-position: 0% 0%; background-repeat: no-repeat; background-size: cover; background-attachment: scroll; -webkit-tap-highlight-color: transparent; user-select: none; visibility: visible; pointer-events: none; background-image: url(&quot;https://statics.xiumi.us/stc/images/templates-assets/tpl-paper/image/a9b20bb2ccb7eb68dd64c87cf9667368-sz_3769.png&quot;); box-sizing: border-box;-webkit-user-select: none;"></svg>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="39.27%" y="61.36%" width="14.34%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="1.03%" class="text-content">
+                                                    <foreignObject width="100%" height="100%" style="pointer-events: none; color: rgb(255, 255, 255); font-size: 40px; text-align: center; box-sizing: border-box;">
+                                                        <p style="margin-top: 0px; margin-bottom: 0px; padding: 0px; box-sizing: border-box;">
+                                                            No.4
+                                                        </p>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="62.89%" y="58.62%" width="56.14%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="3.43%" class="svg-content">
+                                                    <foreignObject width="100%" height="100%" x="0%" y="0%" style="box-sizing: border-box;">
+                                                        <svg viewBox="0 0 796 281" xlink="http://www.w3.org/1999/xlink" xml="" xmlns="http://www.w3.org/2000/svg" space="default" style="display: block; width: 100%; background-position: 0% 0%; background-repeat: no-repeat; background-size: cover; background-attachment: scroll; -webkit-tap-highlight-color: transparent; user-select: none; visibility: visible; pointer-events: none; background-image: url(&quot;https://statics.xiumi.us/stc/images/templates-assets/tpl-paper/image/aea152032281fc7736ffc65e7d5bdd71-sz_158733.png&quot;); box-sizing: border-box;-webkit-user-select: none;"></svg>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="39.03%" y="29.96%" width="18.79%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="1.25%" class="svg-content">
+                                                    <foreignObject width="100%" height="100%" x="0%" y="0%" style="box-sizing: border-box;">
+                                                        <svg viewBox="0 0 807 311" xlink="http://www.w3.org/1999/xlink" xml="" xmlns="http://www.w3.org/2000/svg" space="default" style="display: block; width: 100%; background-position: 0% 0%; background-repeat: no-repeat; background-size: cover; background-attachment: scroll; -webkit-tap-highlight-color: transparent; user-select: none; visibility: visible; pointer-events: none; background-image: url(&quot;https://statics.xiumi.us/stc/images/templates-assets/tpl-paper/image/a9b20bb2ccb7eb68dd64c87cf9667368-sz_3769.png&quot;); box-sizing: border-box;-webkit-user-select: none;"></svg>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="42.40%" y="30.09%" width="14.34%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="1.03%" class="text-content">
+                                                    <foreignObject width="100%" height="100%" style="pointer-events: none; color: rgb(255, 255, 255); font-size: 40px; text-align: center; box-sizing: border-box;">
+                                                        <p style="margin-top: 0px; margin-bottom: 0px; padding: 0px; box-sizing: border-box;">
+                                                            No.2
+                                                        </p>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="56.14%" y="41.63%" width="18.79%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="1.25%" class="svg-content">
+                                                    <foreignObject width="100%" height="100%" x="0%" y="0%" style="box-sizing: border-box;">
+                                                        <svg viewBox="0 0 807 311" xlink="http://www.w3.org/1999/xlink" xml="" xmlns="http://www.w3.org/2000/svg" space="default" style="display: block; width: 100%; background-position: 0% 0%; background-repeat: no-repeat; background-size: cover; background-attachment: scroll; -webkit-tap-highlight-color: transparent; user-select: none; visibility: visible; pointer-events: none; background-image: url(&quot;https://statics.xiumi.us/stc/images/templates-assets/tpl-paper/image/a9b20bb2ccb7eb68dd64c87cf9667368-sz_3769.png&quot;); box-sizing: border-box;-webkit-user-select: none;"></svg>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="59.51%" y="41.75%" width="14.34%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="1.03%" class="text-content">
+                                                    <foreignObject width="100%" height="100%" style="pointer-events: none; color: rgb(255, 255, 255); font-size: 40px; text-align: center; box-sizing: border-box;">
+                                                        <p style="margin-top: 0px; margin-bottom: 0px; padding: 0px; box-sizing: border-box;">
+                                                            No.3
+                                                        </p>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="48.43%" y="70.26%" width="36.39%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; pointer-events: none; box-sizing: border-box;" height="6.29%" class="svg-content elem-with-animation elem-with-interaction-animation" opacity="0">
+                                                    <foreignObject width="100%" height="100%" x="0%" y="0%" style="box-sizing: border-box;">
+                                                        <svg viewBox="0 0 810 810" xlink="http://www.w3.org/1999/xlink" xml="" xmlns="http://www.w3.org/2000/svg" space="default" style="display: block; width: 100%; background-position: 0% 0%; background-repeat: no-repeat; background-size: cover; background-attachment: scroll; -webkit-tap-highlight-color: transparent; user-select: none; visibility: visible; background-image: url(&quot;https://statics.xiumi.us/mat/i/fvId/ebf4f7a4534fbdd481ce93111b9758f0_sz-1383701.jpg?x-oss-process=image/resize,limit_1,m_lfit,w_1080/crop,h_810,w_810,x_135,y_0&quot;); box-sizing: border-box;-webkit-user-select: none;"></svg>
+                                                    </foreignObject>
+                                                    <rect class="self-trigger-area elem-self-trigger-area" width="100%" height="100%" fill="transparent" style="pointer-events: auto; box-sizing: border-box;"></rect>
+                                                    <animate style="box-sizing: border-box;" fill="freeze" attributeName="opacity" begin="click" dur="1500" restart="never" keyTimes="0;0.0004;1" values="0;1;1" elem-animation-type="FadeIn"></animate>
+                                                </svg>
+                                                <svg x="36.62%" y="74.45%" width="18.79%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="1.25%" class="svg-content">
+                                                    <foreignObject width="100%" height="100%" x="0%" y="0%" style="box-sizing: border-box;">
+                                                        <svg viewBox="0 0 807 311" xlink="http://www.w3.org/1999/xlink" xml="" xmlns="http://www.w3.org/2000/svg" space="default" style="display: block; width: 100%; background-position: 0% 0%; background-repeat: no-repeat; background-size: cover; background-attachment: scroll; -webkit-tap-highlight-color: transparent; user-select: none; visibility: visible; pointer-events: none; background-image: url(&quot;https://statics.xiumi.us/stc/images/templates-assets/tpl-paper/image/a9b20bb2ccb7eb68dd64c87cf9667368-sz_3769.png&quot;); box-sizing: border-box;-webkit-user-select: none;"></svg>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="39.99%" y="74.57%" width="14.34%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="1.03%" class="text-content">
+                                                    <foreignObject width="100%" height="100%" style="pointer-events: none; color: rgb(255, 255, 255); font-size: 40px; text-align: center; box-sizing: border-box;">
+                                                        <p style="margin-top: 0px; margin-bottom: 0px; padding: 0px; box-sizing: border-box;">
+                                                            No.5
+                                                        </p>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="10.36%" y="70.37%" width="26.27%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="3.07%" class="svg-content">
+                                                    <foreignObject width="100%" height="100%" x="0%" y="0%" style="box-sizing: border-box;">
+                                                        <svg viewBox="0 0 342 231" xlink="http://www.w3.org/1999/xlink" xml="" xmlns="http://www.w3.org/2000/svg" space="default" style="display: block; width: 100%; background-position: 0% 0%; background-repeat: no-repeat; background-size: cover; background-attachment: scroll; -webkit-tap-highlight-color: transparent; user-select: none; visibility: visible; pointer-events: none; background-image: url(&quot;https://statics.xiumi.us/stc/images/templates-assets/tpl-paper/image/686b925d5c8cfc7ea1fa64d37fe15418-sz_25471.png&quot;); box-sizing: border-box;-webkit-user-select: none;"></svg>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="36.63%" y="87.57%" width="26.51%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="2.27%" class="svg-content">
+                                                    <foreignObject width="100%" height="100%" x="0%" y="0%" style="box-sizing: border-box;">
+                                                        <svg viewBox="0 0 358 177" xlink="http://www.w3.org/1999/xlink" xml="" xmlns="http://www.w3.org/2000/svg" space="default" style="display: block; width: 100%; background-position: 0% 0%; background-repeat: no-repeat; background-size: cover; background-attachment: scroll; -webkit-tap-highlight-color: transparent; user-select: none; visibility: visible; pointer-events: none; background-image: url(&quot;https://statics.xiumi.us/stc/images/templates-assets/tpl-paper/image/a409c9771a54cd80d3cb19b5149e8770-sz_2276.png&quot;); box-sizing: border-box;-webkit-user-select: none;"></svg>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="-0.96%" y="91.77%" width="103.61%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="11.44%" class="svg-content">
+                                                    <foreignObject width="100%" height="100%" x="0%" y="0%" style="box-sizing: border-box;">
+                                                        <svg viewBox="0 0 1444 922" xlink="http://www.w3.org/1999/xlink" xml="" xmlns="http://www.w3.org/2000/svg" space="default" style="display: block; width: 100%; background-position: 0% 0%; background-repeat: no-repeat; background-size: cover; background-attachment: scroll; -webkit-tap-highlight-color: transparent; user-select: none; visibility: visible; pointer-events: none; background-image: url(&quot;https://statics.xiumi.us/stc/images/templates-assets/tpl-paper/image/e361eb2ecb5a35e7727a37d30149c47d-sz_105988.png&quot;); box-sizing: border-box;-webkit-user-select: none;"></svg>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="69.15%" y="3.08%" width="17.47%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="0.62%" class="text-content">
+                                                    <foreignObject width="100%" height="100%" style="pointer-events: none; color: rgb(126, 56, 33); font-size: 23px; text-align: center; box-sizing: border-box;">
+                                                        <p style="margin-top: 0px; margin-bottom: 0px; padding: 0px; box-sizing: border-box;">
+                                                            <strong style="box-sizing: border-box;">MY TRIP</strong>
+                                                        </p>
+                                                    </foreignObject>
+                                                </svg>
+                                                <svg x="66.26%" y="3.37%" width="17.47%" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; box-sizing: border-box;" height="1.07%" class="text-content">
+                                                    <foreignObject width="100%" height="100%" style="pointer-events: none; color: rgb(126, 56, 33); font-size: 42px; text-align: center; box-sizing: border-box;">
+                                                        <p style="margin-top: 0px; margin-bottom: 0px; padding: 0px; box-sizing: border-box;">
+                                                            <strong style="box-sizing: border-box;">2025</strong>
+                                                        </p>
+                                                    </foreignObject>
+                                                </svg>
+                                            </svg>
+                                        </svg>
+                                    </section>
+                                </section>
+                            </section>
+                            <section style="height: 0px; padding-top: 578.611%; box-sizing: border-box;">
+                                <svg viewBox="0 0 1 1" style="float:left;line-height:0;width:0;vertical-align:top;"></svg>
+                            </section>
+                        </section>
+                    </section>
+                </section>
+            </section>
+            <section style="position: static; overflow: visible; box-sizing: border-box;">
+                <section style="width: 100%; height: auto; box-sizing: border-box;">
+                    <section class="top-div sync-trigger-next-layer" style="pointer-events: none; box-sizing: border-box;">
+                        <svg class="svg-layout-content root-svg" width="100%" xmlns="http://www.w3.org/2000/svg" style="box-sizing: border-box; transform: rotateZ(0deg); -webkit-transform: rotateZ(0deg); -moz-transform: rotateZ(0deg); -o-transform: rotateZ(0deg); display: block; max-width: none !important; width: 100%;" opacity="1" viewBox="0 0 100 94">
+                            <svg width="100%" height="100%" style="box-sizing: border-box;">
+                                <svg class="trigger-area action-in-non-trigger-area" width="100%" height="100%" trigger-mode="click" style="box-sizing: border-box;">
+                                    <rect style="box-sizing: border-box; opacity: 0; pointer-events: auto;" x="38.072289%" y="58.46153%" width="27.46988%" height="31.143846%">
+                                        <set attributeName="visibility" from="visible" to="hidden" begin="touchstart" fill="freeze" restart="always" class="prevent-unintended-touch out-animation-for-trigger-area" style="box-sizing: border-box;"></set>
+                                        <animateTransform calcMode="discrete" attributeName="transform" type="translate" values="-2000 0;-2000 0;-2000 0" dur="1s" keyTimes="0;0.00001;1" fill="freeze" begin="touchstart" style="box-sizing: border-box;"></animateTransform>
+                                        <set attributeName="visibility" from="visible" to="visible" begin="touchmove" fill="freeze" restart="always" class="prevent-unintended-touch out-animation-for-trigger-area" style="box-sizing: border-box;"></set>
+                                        <animateTransform calcMode="discrete" attributeName="transform" type="translate" values="0 0;0 0;0 0" dur="1s" keyTimes="0;0.00001;1" fill="freeze" begin="touchmove" style="box-sizing: border-box;"></animateTransform>
+                                    </rect>
+                                </svg>
+                            </svg>
+                            <animate style="box-sizing: border-box;" fill="freeze" attributeName="width" begin="touchstart" dur="16" keyTimes="0;0;0.0625;0.125;0.1875;0.25;0.3125;0.5;0.5625;0.6875;0.875;0.9375;1" values="100%;100%;163.1156%;163.1156%;246.9681%;246.9681%;329.9859%;329.9859%;426.3532%;426.3532%;555.2606%;555.2606%;615.5214%" calcMode="spline" keySplines="0.42 0 0.58 1;0.42 0 0.58 1;0.42 0 0.58 1;0.42 0 0.58 1;0.42 0 0.58 1;0.42 0 0.58 1;0.42 0 0.58 1;0.42 0 0.58 1;0.42 0 0.58 1;0.42 0 0.58 1;0.42 0 0.58 1;0.42 0 0.58 1"></animate>
+                            <animate style="box-sizing: border-box;" fill="freeze" attributeName="width" begin="touchmove" dur="1000s" keyTimes="0;0;0.0625;0.125;0.1875;0.25;0.3125;0.5;0.5625;0.6875;0.875;0.9375;1" values="100%;100%;100%;100%;100%;100%;100%;100%;100%;100%;100%;100%;100%" calcMode="spline" keySplines="0.42 0 0.58 1;0.42 0 0.58 1;0.42 0 0.58 1;0.42 0 0.58 1;0.42 0 0.58 1;0.42 0 0.58 1;0.42 0 0.58 1;0.42 0 0.58 1;0.42 0 0.58 1;0.42 0 0.58 1;0.42 0 0.58 1;0.42 0 0.58 1"></animate>
+                        </svg>
+                    </section>
+                </section>
+            </section>
+        </section>
+    </section>
+<section style="text-align: left; justify-content: flex-start; display: flex; flex-flow: row; margin: 10px 0px; width: 100%; align-self: flex-start; background-color: rgb(245, 245, 245); padding: 15px; position: static; box-sizing: border-box;">
+        <section style="margin: 0px; width: 100%; position: static; box-sizing: border-box;">
+            <section style="text-align: justify; color: rgb(158, 158, 158); font-size: 14px; width: 100%; box-sizing: border-box;">
+                <p style="margin-top: 0px; margin-bottom: 8px; text-wrap-mode: wrap; padding: 0px; box-sizing: border-box;">
+                    <span style="color: #3E3E3E; box-sizing: border-box;">SVG互动效果</span>丨点击飞机，随每段旅行路线飞行；飞机到达每一站点时，点击问号，出现旅行照片。
+                </p>
+                <p style="margin-top: 0px; margin-bottom: 8px; text-wrap-mode: wrap; padding: 0px; box-sizing: border-box;">
+                    <span style="color: #3E3E3E; box-sizing: border-box;">使用组件</span>丨SVG布局、SVG动画
+                </p>
+                <p style="text-wrap-mode: wrap; margin-top: 0px; margin-bottom: 0px; padding: 0px; box-sizing: border-box;">
+                    <span style="color: #3E3E3E; box-sizing: border-box;">使用功能</span>丨组件触发、分段展开、同步点中下一页、路径动画、淡入
+                </p>
+            </section>
+        </section>
+    </section>

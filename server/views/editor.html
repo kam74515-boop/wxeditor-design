@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>微信编辑器 - 文章编辑</title>
+  <meta name="description" content="微信公众号图文编辑器，支持多人协作">
+  <link rel="stylesheet" href="/public/style.css">
+  <!-- Vue 2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.7.16/dist/vue.min.js"></script>
+  <!-- Socket.IO -->
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- UEditor -->
+  <script src="/public/ueditor/ueditor.config.js"></script>
+  <script src="/public/ueditor/ueditor.all.min.js"></script>
+  <script src="/public/ueditor/lang/zh-cn/zh-cn.js"></script>
+
+  <style>
+    /* 编辑器页面特有样式 */
+    .editor-page {
+      display: flex;
+      gap: 10px;
+      height: 100vh;
+      padding: 14px;
+      background: var(--bg);
+      overflow: hidden;
+    }
+
+    /* UEditor 容器适配 */
+    #ueditor-container {
+      width: 100%;
+      flex: 1;
+    }
+
+    #ueditor-container .edui-editor {
+      border: none !important;
+    }
+
+    #ueditor-container .edui-editor-toolbarbox {
+      display: none !important;
+    }
+
+    #ueditor-container .edui-editor-iframeholder {
+      border: none !important;
+    }
+
+    /* 工具栏（控制为单行滑动） */
+    .toolbar-multi {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      padding: 6px 8px;
+      background: var(--yellow-bg);
+      gap: 2px;
+      overflow-x: auto;
+    }
+
+    /* 隐藏工具栏滚动条保持美观 */
+    .toolbar-multi::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* 确保带有下拉的盒子不被压缩 */
+    .toolbar-multi > div {
+      flex-shrink: 0;
+    }
+
+    .toolbar-divider {
+      width: 1px;
+      height: 20px;
+      background: rgba(0,0,0,0.1);
+      margin: 0 4px;
+      flex-shrink: 0;
+    }
+
+    /* 下拉面板 */
+    .dropdown-panel {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      margin-top: 4px;
+      background: white;
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border-light);
+      z-index: 100;
+      padding: 6px;
+      min-width: 140px;
+    }
+
+    .dropdown-item {
+      display: block;
+      width: 100%;
+      padding: 6px 10px;
+      border: none;
+      background: none;
+      text-align: left;
+      cursor: pointer;
+      border-radius: 6px;
+      font-family: var(--font-family);
+      font-size: var(--font-sm);
+      color: var(--text-primary);
+      transition: background 0.1s;
+    }
+
+    .dropdown-item:hover {
+      background: var(--yellow-light);
+    }
+
+    /* 颜色选择面板 */
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 3px;
+      padding: 6px;
+    }
+
+    .color-swatch {
+      width: 22px;
+      height: 22px;
+      border-radius: 4px;
+      border: 1px solid rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    .color-swatch:hover {
+      transform: scale(1.2);
+      border-color: rgba(0,0,0,0.3);
+    }
+
+    /* 在线用户状态条 */
+    .online-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      background: var(--yellow-bg);
+      border-radius: var(--radius-sm);
+      font-size: var(--font-xs);
+      color: var(--text-muted);
+    }
+
+    .online-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    /* 聊天用户列表 */
+    .collab-user-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 8px 0;
+    }
+
+    .collab-user-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      font-size: var(--font-xs);
+    }
+
+    .collab-user-avatar {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      font-weight: 800;
+      color: white;
+    }
+
+    /* 文章信息面板行布局 */
+    .article-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* 版本信息 */
+    .version-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      background: rgba(255,255,255,0.5);
+      font-size: var(--font-xs);
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    /* AI 打字动画 */
+    .ai-typing {
+      display: flex;
+      gap: 4px;
+      padding: 8px 12px;
+    }
+    .ai-typing span {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      animation: typing 1.2s infinite;
+    }
+    .ai-typing span:nth-child(2) { animation-delay: 0.2s; }
+    .ai-typing span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typing {
+      0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+      30% { opacity: 1; transform: translateY(-4px); }
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="editor-page" v-cloak>
+    <!-- ============ 左列 (300px) ============ -->
+    <div class="editor-left-col">
+      <!-- 用户登录卡片 -->
+      <div class="user-card">
+        <div class="user-avatar">{{ userInitial }}</div>
+        <div class="user-info">
+          <span class="user-name">{{ userName }}</span>
+          <span class="user-sub">{{ connectionStatus }}</span>
+        </div>
+        <button class="btn-ghost" style="padding:4px;cursor:pointer;border:none;background:none;" @click="goBack" title="返回项目">
+          <i data-lucide="log-out" style="width:16px;height:16px;color:var(--text-muted);"></i>
+        </button>
+      </div>
+
+      <!-- 标签页导航 -->
+      <div style="display:flex;flex-direction:column;flex:1;min-height:0;">
+        <div class="tab-bar">
+          <button v-for="tab in tabs" :key="tab.key"
+            class="tab-item" :class="['tab-' + tab.color, { active: activeTab === tab.key }]"
+            @click="activeTab = tab.key" :title="tab.label">
+            <i :data-lucide="tab.icon" style="width:18px;height:18px;"></i>
+          </button>
+        </div>
+
+        <!-- 标签内容面板 -->
+        <div class="tab-panel">
+          <!-- 模版标签 -->
+          <div v-show="activeTab === 'template'">
+            <div class="empty-state" style="padding:30px 10px;">
+              <i data-lucide="file-text" class="empty-icon" style="width:40px;height:40px;opacity:0.6;margin-bottom:8px;"></i>
+              <span class="empty-text">模版库（开发中）</span>
+            </div>
+          </div>
+
+          <!-- SVG 标签 -->
+          <div v-show="activeTab === 'svg'">
+            <div class="empty-state" style="padding:30px 10px;">
+              <i data-lucide="shapes" class="empty-icon" style="width:40px;height:40px;opacity:0.6;margin-bottom:8px;"></i>
+              <span class="empty-text">SVG 组件（开发中）</span>
+            </div>
+          </div>
+
+          <!-- 素材标签 -->
+          <div v-show="activeTab === 'material'">
+            <div class="empty-state" style="padding:30px 10px;">
+              <i data-lucide="image" class="empty-icon" style="width:40px;height:40px;opacity:0.6;margin-bottom:8px;"></i>
+              <span class="empty-text">素材库（开发中）</span>
+            </div>
+          </div>
+
+          <!-- 上传标签 -->
+          <div v-show="activeTab === 'upload'">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:20px 0;">
+              <i data-lucide="cloud-upload" style="width:48px;height:48px;opacity:0.2;margin-bottom:8px;"></i>
+              <button class="btn btn-secondary btn-full" @click="uploadImage" style="height:36px;">
+                <i data-lucide="upload-cloud" class="icon"></i>
+                点击上传文件
+              </button>
+              <input type="file" ref="fileInput" style="display:none;" accept="image/*" @change="handleFileUpload">
+            </div>
+          </div>
+
+          <!-- 项目标签 -->
+          <div v-show="activeTab === 'project'">
+            <div class="empty-state" style="padding:30px 10px;">
+              <i data-lucide="folder" class="empty-icon" style="width:40px;height:40px;opacity:0.6;margin-bottom:8px;"></i>
+              <span class="empty-text">项目文件（开发中）</span>
+            </div>
+          </div>
+
+          <!-- AI 生图标签 -->
+          <div v-show="activeTab === 'aigen'">
+            <div class="empty-state" style="padding:30px 10px;">
+              <i data-lucide="sparkles" class="empty-icon" style="width:40px;height:40px;opacity:0.6;margin-bottom:8px;"></i>
+              <span class="empty-text">AI 生图（开发中）</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 文章信息面板 -->
+      <div class="article-info-panel">
+        <span class="panel-title">文章信息</span>
+
+        <!-- 状态栏 -->
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div class="online-bar" v-if="onlineUsers.length > 0">
+            <span class="online-dot"></span>
+            <span>{{ onlineUsers.length }} 人在线</span>
+          </div>
+          <span class="version-badge">v{{ docVersion }}</span>
+        </div>
+
+        <!-- 封面 + 信息 -->
+        <div class="article-row">
+          <div class="article-cover" @click="uploadCover">
+            <img v-if="article.coverImage" :src="article.coverImage" alt="封面">
+            <div v-else style="display:flex;flex-direction:column;align-items:center;gap:4px;opacity:0.5;">
+               <i data-lucide="image-plus" style="width:20px;height:20px;"></i>
+               <span style="font-size:10px;">设置封面</span>
+            </div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+            <div class="article-form-group">
+              <label>标题</label>
+              <input v-model="article.title" placeholder="文章标题" @blur="saveArticleInfo">
+            </div>
+            <div class="article-form-group">
+              <label>作者</label>
+              <input v-model="article.author" placeholder="作者" @blur="saveArticleInfo">
+            </div>
+          </div>
+        </div>
+
+        <div class="article-form-group">
+          <label>摘要</label>
+          <textarea v-model="article.summary" placeholder="文章摘要（120字以内）" rows="2" @blur="saveArticleInfo"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 中间列 (flex) ============ -->
+    <div class="editor-center-col">
+      <!-- 黄色工具条 -->
+      <div class="toolbar-multi">
+        <!-- 撤销/重做 -->
+        <button class="tool-btn tool-btn-icon" @click="execCmd('undo')" title="撤销 (Ctrl+Z)">
+          <i data-lucide="undo-2" style="width:14px;height:14px;"></i>
+        </button>
+        <button class="tool-btn tool-btn-icon" @click="execCmd('redo')" title="重做 (Ctrl+Y)">
+          <i data-lucide="redo-2" style="width:14px;height:14px;"></i>
+        </button>
+
+        <span class="toolbar-divider"></span>
+
+        <!-- 标题下拉 -->
+        <div style="position:relative;">
+          <button class="tool-btn tool-btn-wide" @click="toggleDropdown('heading')" title="段落格式">
+            <i data-lucide="heading" style="width:14px;height:14px;"></i>
+            <span>{{ currentHeading || '正文' }}</span>
+            <i data-lucide="chevron-down" style="width:10px;height:10px;margin-left:-2px;"></i>
+          </button>
+          <div class="dropdown-panel" v-if="dropdown === 'heading'" @mouseleave="dropdown = ''">
+            <button class="dropdown-item" @click="execCmd('paragraph','p')">正文</button>
+            <button class="dropdown-item" style="font-size:20px;font-weight:800;" @click="execCmd('paragraph','h1')">标题 1</button>
+            <button class="dropdown-item" style="font-size:17px;font-weight:800;" @click="execCmd('paragraph','h2')">标题 2</button>
+            <button class="dropdown-item" style="font-size:15px;font-weight:700;" @click="execCmd('paragraph','h3')">标题 3</button>
+            <button class="dropdown-item" style="font-size:14px;font-weight:700;" @click="execCmd('paragraph','h4')">标题 4</button>
+          </div>
+        </div>
+
+        <!-- 字号下拉 -->
+        <div style="position:relative;">
+          <button class="tool-btn tool-btn-wide" @click="toggleDropdown('fontsize')" title="字号">
+            <i data-lucide="a-large-small" style="width:14px;height:14px;"></i>
+            <span>字号</span>
+            <i data-lucide="chevron-down" style="width:10px;height:10px;margin-left:-2px;"></i>
+          </button>
+          <div class="dropdown-panel" v-if="dropdown === 'fontsize'" @mouseleave="dropdown = ''" style="min-width:100px;">
+            <button class="dropdown-item" v-for="s in fontSizes" :key="s" @click="execCmd('fontsize', s)" :style="{fontSize: s}">{{ s }}</button>
+          </div>
+        </div>
+
+        <span class="toolbar-divider"></span>
+
+        <!-- 基础格式 -->
+        <button class="tool-btn tool-btn-icon" @click="execCmd('bold')" title="加粗 (Ctrl+B)">
+          <i data-lucide="bold" style="width:14px;height:14px;"></i>
+        </button>
+        <button class="tool-btn tool-btn-icon" @click="execCmd('italic')" title="斜体 (Ctrl+I)">
+          <i data-lucide="italic" style="width:14px;height:14px;"></i>
+        </button>
+        <button class="tool-btn tool-btn-icon" @click="execCmd('underline')" title="下划线 (Ctrl+U)">
+          <i data-lucide="underline" style="width:14px;height:14px;"></i>
+        </button>
+        <button class="tool-btn tool-btn-icon" @click="execCmd('strikethrough')" title="删除线">
+          <i data-lucide="strikethrough" style="width:14px;height:14px;"></i>
+        </button>
+
+        <span class="toolbar-divider"></span>
+
+        <!-- 颜色 -->
+        <div style="position:relative;">
+          <button class="tool-btn" @click="toggleDropdown('forecolor')" title="文字颜色" style="padding:6px 8px;gap:4px;">
+            <i data-lucide="baseline" style="width:14px;height:14px;"></i>
+            <span style="display:block;width:14px;height:3px;border-radius:1px;" :style="{background: currentForeColor}"></span>
+          </button>
+          <div class="dropdown-panel" v-if="dropdown === 'forecolor'" @mouseleave="dropdown = ''" style="width:210px;">
+            <div class="color-grid">
+              <div v-for="c in colorPalette" :key="c" class="color-swatch" :style="{background: c}" @click="execCmd('forecolor', c)" :title="c"></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="position:relative;">
+          <button class="tool-btn" @click="toggleDropdown('backcolor')" title="背景颜色" style="padding:6px 8px;gap:4px;">
+            <i data-lucide="highlighter" style="width:14px;height:14px;"></i>
+          </button>
+          <div class="dropdown-panel" v-if="dropdown === 'backcolor'" @mouseleave="dropdown = ''" style="width:210px;">
+            <div class="color-grid">
+              <div v-for="c in bgColorPalette" :key="c" class="color-swatch" :style="{background: c}" @click="execCmd('backcolor', c)" :title="c"></div>
+            </div>
+          </div>
+        </div>
+
+        <span class="toolbar-divider"></span>
+
+        <!-- 对齐 -->
+        <button class="tool-btn tool-btn-icon" @click="execCmd('justifyleft')" title="左对齐">
+          <i data-lucide="align-left" style="width:14px;height:14px;"></i>
+        </button>
+        <button class="tool-btn tool-btn-icon" @click="execCmd('justifycenter')" title="居中">
+          <i data-lucide="align-center" style="width:14px;height:14px;"></i>
+        </button>
+        <button class="tool-btn tool-btn-icon" @click="execCmd('justifyright')" title="右对齐">
+          <i data-lucide="align-right" style="width:14px;height:14px;"></i>
+        </button>
+
+        <span class="toolbar-divider"></span>
+
+        <!-- 列表/缩进 -->
+        <button class="tool-btn tool-btn-icon" @click="execCmd('insertunorderedlist')" title="无序列表">
+          <i data-lucide="list" style="width:14px;height:14px;"></i>
+        </button>
+        <button class="tool-btn tool-btn-icon" @click="execCmd('insertorderedlist')" title="有序列表">
+          <i data-lucide="list-ordered" style="width:14px;height:14px;"></i>
+        </button>
+        <button class="tool-btn tool-btn-icon" @click="execCmd('indent')" title="增加缩进">
+          <i data-lucide="indent-increase" style="width:14px;height:14px;"></i>
+        </button>
+        <button class="tool-btn tool-btn-icon" @click="execCmd('outdent')" title="减少缩进">
+          <i data-lucide="indent-decrease" style="width:14px;height:14px;"></i>
+        </button>
+
+        <span class="toolbar-divider"></span>
+
+        <!-- 引用/分割线 -->
+        <button class="tool-btn tool-btn-icon" @click="execCmd('blockquote')" title="引用">
+          <i data-lucide="quote" style="width:14px;height:14px;"></i>
+        </button>
+        <button class="tool-btn tool-btn-icon" @click="execCmd('horizontal')" title="水平线">
+          <i data-lucide="minus" style="width:14px;height:14px;"></i>
+        </button>
+
+        <span class="toolbar-divider"></span>
+
+        <!-- 插入 -->
+        <button class="tool-btn" @click="insertLink" title="插入链接" style="padding:6px 8px;">
+          <i data-lucide="link" style="width:14px;height:14px;"></i>
+        </button>
+        <button class="tool-btn" @click="execCmd('unlink')" title="取消链接" style="padding:6px 8px;">
+          <i data-lucide="unlink" style="width:14px;height:14px;"></i>
+        </button>
+        <button class="tool-btn" @click="uploadImage" title="插入图片" style="padding:6px 8px;">
+          <i data-lucide="image" style="width:14px;height:14px;"></i>
+        </button>
+        <button class="tool-btn" @click="insertTable" title="插入表格" style="padding:6px 8px;">
+          <i data-lucide="table" style="width:14px;height:14px;"></i>
+        </button>
+
+        <span class="toolbar-divider"></span>
+
+        <!-- 清除/源码 -->
+        <button class="tool-btn tool-btn-icon" @click="execCmd('removeformat')" title="清除格式">
+          <i data-lucide="eraser" style="width:14px;height:14px;"></i>
+        </button>
+        <button class="tool-btn tool-btn-icon" @click="execCmd('source')" title="源代码">
+          <i data-lucide="code" style="width:14px;height:14px;"></i>
+        </button>
+      </div>
+
+      <!-- 编辑器主区域 -->
+      <div class="editor-area" style="position:relative;">
+        <!-- UEditor 容器 -->
+        <div id="ueditor-container">
+          <script id="ueditor" type="text/plain" style="width:100%;height:100%;"></script>
+        </div>
+
+        <!-- UEditor 未加载时的 fallback 编辑器 -->
+        <div v-if="!ueditorReady" id="fallback-editor"
+          contenteditable="true"
+          class="editor-canvas"
+          @input="onFallbackInput"
+          placeholder="在这里开始编辑文章…"
+          style="position:absolute;inset:0;padding:14px;background:white;z-index:5;">
+        </div>
+      </div>
+
+      <!-- 底部状态栏 -->
+      <div class="status-bar">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span>字数：<strong>{{ wordCount }}</strong></span>
+          <span v-if="lastSaved">最后保存：{{ lastSaved }}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <!-- 协作用户 -->
+          <div class="collab-users" v-if="onlineUsers.length > 1">
+            <div v-for="u in onlineUsers.slice(0, 5)" :key="u.id"
+              class="collab-avatar" :style="{ background: u.color }">
+              {{ u.name.charAt(0) }}
+            </div>
+          </div>
+          <!-- 操作按钮 -->
+          <button class="btn btn-sm btn-primary" @click="saveDocument" title="保存">
+            💾 保存
+          </button>
+          <button class="btn btn-sm btn-secondary" @click="syncToWechat" title="同步到公众号">
+            ☁️ 同步
+          </button>
+          <button class="btn btn-sm btn-secondary" @click="copyToClipboard" title="复制">
+            📋 复制
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 右列 AI 区 (360px) ============ -->
+    <div class="editor-right-col">
+      <div class="ai-panel">
+        <!-- AI 消息区 -->
+        <div class="ai-messages" ref="aiMessages">
+          <!-- 欢迎消息 -->
+          <div class="ai-msg system" v-if="aiMessages.length === 0">
+            👋 你好！我是 AI 写作助手，可以帮你润色文章、生成标题、优化内容。
+          </div>
+          <!-- 消息列表 -->
+          <div v-for="(msg, idx) in aiMessages" :key="idx"
+            class="ai-msg" :class="msg.role">
+            <div v-html="formatAiMessage(msg.content)"></div>
+          </div>
+          <!-- AI 正在输入 -->
+          <div v-if="aiLoading" class="ai-msg assistant">
+            <div class="ai-typing">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI 输入栏 -->
+        <div class="ai-input-bar">
+          <div class="ai-input-wrap">
+            <input
+              v-model="aiInput"
+              placeholder="问 AI 帮一句话…"
+              @keyup.enter="sendAiMessage"
+              :disabled="aiLoading"
+            >
+            <button class="ai-send-btn" @click="sendAiMessage" :disabled="aiLoading" title="发送">
+              <i data-lucide="arrow-up" style="width:16px;height:16px;color:var(--text-primary);"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" v-if="showNicknameModal">
+      <div class="modal-box">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+          <i data-lucide="user" style="width:24px;height:24px;color:var(--yellow-accent);"></i>
+          <h3 style="margin:0;">设置昵称</h3>
+        </div>
+        <p style="color:var(--text-muted);font-size:var(--font-sm);margin-bottom:12px;">
+          输入你的昵称以加入协作编辑
+        </p>
+        <input class="modal-input" v-model="inputNickname" placeholder="你的昵称"
+          @keyup.enter="confirmNickname" autofocus>
+        <div class="modal-actions">
+          <button class="btn btn-primary" @click="confirmNickname" :disabled="!inputNickname.trim()">
+            加入协作
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <transition name="fade">
+      <div v-if="toast.show" class="toast" :class="'toast-' + toast.type">
+        {{ toast.message }}
+      </div>
+    </transition>
+  </div>
+
+  <script>
+    new Vue({
+      el: '#app',
+      data: {
+        // 文档信息
+        documentId: '',
+        article: {
+          title: '',
+          author: '',
+          summary: '',
+          coverImage: ''
+        },
+        docVersion: 1,
+        wordCount: 0,
+        lastSaved: '',
+
+        // 用户信息
+        userName: '用户',
+        userId: '',
+        inputNickname: '',
+        showNicknameModal: false,
+
+        // 标签页
+        activeTab: 'template',
+        tabs: [
+          { key: 'template', label: '模版', icon: 'file-text', color: 'template' },
+          { key: 'svg', label: 'SVG', icon: 'shapes', color: 'svg' },
+          { key: 'material', label: '素材', icon: 'image', color: 'material' },
+          { key: 'upload', label: '上传', icon: 'upload', color: 'upload' },
+          { key: 'project', label: '项目', icon: 'folder', color: 'project' },
+          { key: 'aigen', label: 'AI生图', icon: 'sparkles', color: 'ai' }
+        ],
+
+        // UEditor
+        ueditorReady: false,
+        ueInstance: null,
+
+        // 工具栏状态
+        dropdown: '',
+        currentHeading: '',
+        currentForeColor: '#333333',
+        isSourceView: false,
+        fontSizes: ['12px', '13px', '14px', '15px', '16px', '18px', '20px', '22px', '24px', '28px', '32px'],
+        colorPalette: [
+          '#000000', '#333333', '#555555', '#888888', '#AAAAAA', '#CCCCCC', '#EEEEEE', '#FFFFFF',
+          '#FF3B30', '#FF9500', '#FFCC00', '#34C759', '#007AFF', '#5856D6', '#AF52DE', '#FF2D55',
+          '#E74C3C', '#E67E22', '#F1C40F', '#2ECC71', '#3498DB', '#9B59B6', '#1ABC9C', '#E91E63',
+          '#C0392B', '#D35400', '#F39C12', '#27AE60', '#2980B9', '#8E44AD', '#16A085', '#C2185B',
+          '#8B0000', '#B8860B', '#006400', '#00008B', '#4B0082', '#2F4F4F', '#191970', '#800080'
+        ],
+        bgColorPalette: [
+          'transparent', '#FFFFFF', '#FFF9C4', '#FFECB3', '#FFE0B2', '#FFCDD2', '#F8BBD0', '#E1BEE7',
+          '#C5CAE9', '#BBDEFB', '#B2EBF2', '#B2DFDB', '#C8E6C9', '#DCEDC8', '#F0F4C3', '#FFF3E0',
+          '#FFEFA3', '#FFD60A', '#FFE082', '#FF8A80', '#FF80AB', '#EA80FC', '#8C9EFF', '#80D8FF',
+          '#84FFFF', '#A7FFEB', '#B9F6CA', '#CCFF90', '#F4FF81', '#FFE57F', '#FFD180', '#FF9E80'
+        ],
+
+        // Socket.IO 协作
+        socket: null,
+        onlineUsers: [],
+        isEditing: false,
+
+        // AI 聊天
+        aiMessages: [],
+        aiInput: '',
+        aiLoading: false,
+
+        // Toast
+        toast: { show: false, message: '', type: 'info' },
+
+        // 内容同步定时器
+        syncTimer: null,
+        lastContent: ''
+      },
+
+      computed: {
+        userInitial() {
+          return this.userName ? this.userName.charAt(0).toUpperCase() : 'U';
+        },
+        connectionStatus() {
+          if (!this.socket) return '未连接';
+          if (this.socket.connected) return '已连接 · 微信公众号编辑';
+          return '连接中…';
+        }
+      },
+
+      mounted() {
+        // 获取文档 ID
+        const pathParts = window.location.pathname.split('/');
+        this.documentId = pathParts[pathParts.length - 1] || '';
+
+        // 恢复用户名
+        const savedName = localStorage.getItem('wxeditor_username');
+        if (savedName) {
+          this.userName = savedName;
+          this.userId = 'user-' + Date.now();
+          this.initAll();
+        } else {
+          this.showNicknameModal = true;
+        }
+
+        this.$nextTick(() => {
+          if (window.lucide) lucide.createIcons();
+        });
+      },
+
+      updated() {
+        this.$nextTick(() => {
+          if (window.lucide) lucide.createIcons();
+        });
+      },
+
+      beforeDestroy() {
+        if (this.syncTimer) clearInterval(this.syncTimer);
+        if (this.socket) {
+          this.socket.emit('leave-document', { documentId: this.documentId });
+          this.socket.disconnect();
+        }
+        if (this.ueInstance) {
+          try { this.ueInstance.destroy(); } catch(e) {}
+        }
+      },
+
+      methods: {
+        // 确认昵称
+        confirmNickname() {
+          const name = this.inputNickname.trim();
+          if (!name) return;
+          this.userName = name;
+          this.userId = 'user-' + Date.now();
+          localStorage.setItem('wxeditor_username', name);
+          this.showNicknameModal = false;
+          this.initAll();
+        },
+
+        // 初始化所有功能
+        initAll() {
+          this.initUEditor();
+          this.loadDocument();
+          this.initSocket();
+          this.loadAiHistory();
+        },
+
+        // ============ UEditor 初始化 ============
+        initUEditor() {
+          // 检查 UEditor 是否可用
+          if (typeof UE === 'undefined') {
+            console.warn('UEditor 未加载，使用 fallback 编辑器');
+            return;
+          }
+
+          try {
+            this.ueInstance = UE.getEditor('ueditor', {
+              initialFrameWidth: '100%',
+              initialFrameHeight: 600,
+              autoHeightEnabled: true,
+              serverUrl: '/api/ueditor',
+              toolbars: [[]],  // 隐藏默认工具栏，使用自定义
+              elementPathEnabled: false,
+              wordCount: false,
+              enableAutoSave: false,
+              zIndex: 1
+            });
+
+            this.ueInstance.addListener('ready', () => {
+              this.ueditorReady = true;
+              // 如果 fallback 编辑器有内容，转移过来
+              const fallback = document.getElementById('fallback-editor');
+              if (fallback && fallback.innerHTML.trim()) {
+                this.ueInstance.setContent(fallback.innerHTML);
+              }
+              this.startContentSync();
+            });
+
+            this.ueInstance.addListener('contentChange', () => {
+              this.updateWordCount();
+            });
+          } catch (e) {
+            console.error('UEditor 初始化失败:', e);
+          }
+        },
+
+        // ============ 文档加载 ============
+        async loadDocument() {
+          if (!this.documentId || this.documentId === 'editor') return;
+
+          try {
+            const res = await fetch('/api/collab/documents/' + this.documentId);
+            const json = await res.json();
+            if (json.success && json.data) {
+              const doc = json.data;
+              this.article.title = doc.title || '';
+              this.article.summary = doc.summary || '';
+              this.article.coverImage = doc.cover_image || '';
+              this.docVersion = doc.version || 1;
+
+              // 加载内容到编辑器
+              if (doc.content) {
+                this.setEditorContent(doc.content);
+                this.lastContent = doc.content;
+              }
+            }
+          } catch (e) {
+            console.error('加载文档失败:', e);
+          }
+        },
+
+        // ============ Socket.IO 协作 ============
+        initSocket() {
+          this.socket = io();
+
+          this.socket.on('connect', () => {
+            // 加入文档
+            if (this.documentId && this.documentId !== 'editor') {
+              this.socket.emit('join-document', {
+                documentId: this.documentId,
+                userInfo: { id: this.userId, name: this.userName }
+              });
+            }
+          });
+
+          this.socket.on('disconnect', () => {
+            this.$forceUpdate();
+          });
+
+          // 成功加入文档
+          this.socket.on('document-joined', (data) => {
+            if (data.document && data.document.content) {
+              this.setEditorContent(data.document.content);
+              this.lastContent = data.document.content;
+            }
+            if (data.document) {
+              this.docVersion = data.document.version || 1;
+            }
+            if (data.users) {
+              this.onlineUsers = data.users;
+            }
+          });
+
+          // 用户加入
+          this.socket.on('user-joined', (data) => {
+            this.showToast(data.user.name + ' 加入了协作', 'info');
+            this.refreshUserList();
+          });
+
+          // 用户离开
+          this.socket.on('user-left', (data) => {
+            this.onlineUsers = this.onlineUsers.filter(u => u.id !== data.userId);
+          });
+
+          // 文档更新
+          this.socket.on('document-updated', (data) => {
+            if (data.changes && data.changes.fullContent && !this.isEditing) {
+              this.setEditorContent(data.changes.fullContent);
+              this.lastContent = data.changes.fullContent;
+            }
+            this.docVersion = data.version || this.docVersion;
+          });
+
+          // 编辑权限
+          this.socket.on('edit-granted', () => {
+            this.isEditing = true;
+            this.showToast('已获得编辑权限', 'success');
+          });
+
+          this.socket.on('edit-denied', (data) => {
+            this.showToast('编辑被拒绝：' + data.reason, 'error');
+          });
+
+          // 文档保存确认
+          this.socket.on('document-saved', (data) => {
+            this.lastSaved = new Date(data.timestamp).toLocaleTimeString();
+            this.docVersion = data.version || this.docVersion;
+          });
+
+          // 聊天消息
+          this.socket.on('chat-message', (data) => {
+            // 团队聊天消息可以在 AI 面板显示
+          });
+
+          // 用户列表
+          this.socket.on('users-list', (data) => {
+            this.onlineUsers = data.users || [];
+          });
+
+          this.socket.on('document-locked', (data) => {
+            this.showToast('文档被 ' + data.lockedBy.name + ' 锁定编辑', 'info');
+          });
+
+          this.socket.on('document-unlocked', () => {
+            // 文档解锁
+          });
+        },
+
+        refreshUserList() {
+          if (this.socket && this.documentId) {
+            this.socket.emit('get-users', { documentId: this.documentId });
+          }
+        },
+
+        // ============ 内容同步 ============
+        startContentSync() {
+          this.syncTimer = setInterval(() => {
+            if (!this.socket || !this.socket.connected) return;
+            const content = this.getEditorContent();
+            if (content && content !== this.lastContent) {
+              this.lastContent = content;
+              this.socket.emit('document-change', {
+                documentId: this.documentId,
+                changes: { fullContent: content },
+                version: this.docVersion,
+                mode: 'lock'
+              });
+            }
+          }, 2000);
+        },
+
+        // ============ 编辑器操作 ============
+        getEditorContent() {
+          if (this.ueInstance && this.ueditorReady) {
+            try {
+              return this.ueInstance.getContent();
+            } catch (e) { return ''; }
+          }
+          // fallback
+          const el = document.getElementById('fallback-editor');
+          return el ? el.innerHTML : '';
+        },
+
+        setEditorContent(content) {
+          if (this.ueInstance && this.ueditorReady) {
+            try {
+              this.ueInstance.setContent(content);
+            } catch (e) {}
+          } else {
+            const el = document.getElementById('fallback-editor');
+            if (el) el.innerHTML = content;
+          }
+          this.updateWordCount();
+        },
+
+        onFallbackInput() {
+          this.updateWordCount();
+        },
+
+        updateWordCount() {
+          const content = this.getEditorContent();
+          const text = content.replace(/<[^>]*>/g, '');
+          this.wordCount = text.length;
+        },
+
+        // 切换下拉面板
+        toggleDropdown(name) {
+          this.dropdown = this.dropdown === name ? '' : name;
+        },
+
+        // 工具条命令
+        execCmd(cmd, value) {
+          // 关闭下拉
+          this.dropdown = '';
+
+          const ue = this.ueInstance && this.ueditorReady;
+
+          if (ue) {
+            try {
+              switch (cmd) {
+                case 'paragraph':
+                  this.ueInstance.execCommand('paragraph', value || 'p');
+                  this.currentHeading = value === 'p' ? '' : value.toUpperCase();
+                  break;
+                case 'fontsize':
+                  this.ueInstance.execCommand('fontsize', value);
+                  break;
+                case 'forecolor':
+                  this.ueInstance.execCommand('forecolor', value);
+                  this.currentForeColor = value;
+                  break;
+                case 'backcolor':
+                  this.ueInstance.execCommand('backcolor', value);
+                  break;
+                case 'horizontal':
+                  this.ueInstance.execCommand('horizontal');
+                  break;
+                case 'source':
+                  this.ueInstance.execCommand('source');
+                  break;
+                case 'blockquote':
+                  this.ueInstance.execCommand('blockquote');
+                  break;
+                default:
+                  this.ueInstance.execCommand(cmd);
+              }
+            } catch (e) {
+              console.warn('UEditor 命令执行失败:', cmd, e);
+            }
+          } else {
+            // fallback: document.execCommand 适配
+            const fb = document.getElementById('fallback-editor');
+            if (fb) fb.focus();
+
+            switch (cmd) {
+              case 'paragraph':
+                document.execCommand('formatBlock', false, '<' + (value || 'p') + '>');
+                this.currentHeading = value === 'p' ? '' : value.toUpperCase();
+                break;
+              case 'fontsize': {
+                // execCommand fontSize 只接受 1-7，需要用 span+style 替代
+                const sel = window.getSelection();
+                if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+                  const range = sel.getRangeAt(0);
+                  const span = document.createElement('span');
+                  span.style.fontSize = value;
+                  range.surroundContents(span);
+                }
+                break;
+              }
+              case 'forecolor':
+                document.execCommand('foreColor', false, value);
+                this.currentForeColor = value;
+                break;
+              case 'backcolor':
+                document.execCommand('hiliteColor', false, value);
+                break;
+              case 'blockquote':
+                document.execCommand('formatBlock', false, '<blockquote>');
+                break;
+              case 'horizontal':
+                document.execCommand('insertHorizontalRule', false, null);
+                break;
+              case 'source':
+                this.toggleSourceView();
+                break;
+              case 'removeformat':
+                document.execCommand('removeFormat', false, null);
+                break;
+              case 'unlink':
+                document.execCommand('unlink', false, null);
+                break;
+              default:
+                document.execCommand(cmd, false, null);
+            }
+          }
+        },
+
+        // 源代码视图切换
+        toggleSourceView() {
+          const fb = document.getElementById('fallback-editor');
+          if (!fb) return;
+          if (this.isSourceView) {
+            // 从源码切回
+            fb.innerHTML = fb.innerText;
+            fb.contentEditable = 'true';
+            this.isSourceView = false;
+          } else {
+            // 切到源码
+            fb.innerText = fb.innerHTML;
+            fb.contentEditable = 'true';
+            this.isSourceView = true;
+          }
+        },
+
+        // 插入链接
+        insertLink() {
+          const url = prompt('请输入链接地址:', 'https://');
+          if (!url) return;
+          const text = prompt('链接文字（可选）:', '') || url;
+
+          if (this.ueInstance && this.ueditorReady) {
+            this.ueInstance.execCommand('link', { href: url, target: '_blank', textValue: text });
+          } else {
+            const sel = window.getSelection();
+            if (sel && sel.rangeCount > 0) {
+              if (sel.isCollapsed) {
+                document.execCommand('insertHTML', false,
+                  '<a href="' + url + '" target="_blank">' + text + '</a>');
+              } else {
+                document.execCommand('createLink', false, url);
+              }
+            }
+          }
+        },
+
+        // 插入表格
+        insertTable() {
+          const rows = prompt('表格行数:', '3');
+          const cols = prompt('表格列数:', '3');
+          if (!rows || !cols) return;
+
+          if (this.ueInstance && this.ueditorReady) {
+            this.ueInstance.execCommand('inserttable', { numRows: parseInt(rows), numCols: parseInt(cols) });
+          } else {
+            let html = '<table style="width:100%;border-collapse:collapse;margin:10px 0;">';
+            for (let r = 0; r < parseInt(rows); r++) {
+              html += '<tr>';
+              for (let c = 0; c < parseInt(cols); c++) {
+                const tag = r === 0 ? 'th' : 'td';
+                html += '<' + tag + ' style="border:1px solid #ddd;padding:8px;">' + (r === 0 ? '表头' : '内容') + '</' + tag + '>';
+              }
+              html += '</tr>';
+            }
+            html += '</table>';
+            document.execCommand('insertHTML', false, html);
+          }
+        },
+
+        uploadImage() {
+          this.$refs.fileInput.click();
+        },
+
+        async handleFileUpload(event) {
+          const file = event.target.files[0];
+          if (!file) return;
+
+          const formData = new FormData();
+          formData.append('upfile', file);
+
+          try {
+            const res = await fetch('/api/ueditor?action=uploadimage', {
+              method: 'POST',
+              body: formData
+            });
+            const json = await res.json();
+            if (json.state === 'SUCCESS') {
+              const imgHtml = '<img src="' + json.url + '" style="max-width:100%;">';
+              if (this.ueInstance && this.ueditorReady) {
+                this.ueInstance.execCommand('inserthtml', imgHtml);
+              } else {
+                document.execCommand('insertHTML', false, imgHtml);
+              }
+              this.showToast('图片上传成功', 'success');
+            }
+          } catch (e) {
+            this.showToast('上传失败', 'error');
+          }
+        },
+
+        uploadCover() {
+          // 简单实现：使用 prompt 输入 URL
+          const url = prompt('输入封面图片 URL:', this.article.coverImage);
+          if (url !== null) {
+            this.article.coverImage = url;
+            this.saveArticleInfo();
+          }
+        },
+
+        // ============ 文档保存 ============
+        async saveDocument() {
+          const content = this.getEditorContent();
+
+          if (this.documentId && this.documentId !== 'editor') {
+            // 更新已有文档
+            try {
+              const res = await fetch('/api/collab/documents/' + this.documentId, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  title: this.article.title,
+                  content: content,
+                  summary: this.article.summary,
+                  cover_image: this.article.coverImage
+                })
+              });
+              const json = await res.json();
+              if (json.success) {
+                this.lastSaved = new Date().toLocaleTimeString();
+                this.docVersion = json.data.version || this.docVersion;
+                this.showToast('保存成功', 'success');
+
+                // 通过 Socket 通知
+                if (this.socket) {
+                  this.socket.emit('save-document', {
+                    documentId: this.documentId,
+                    content: content,
+                    title: this.article.title
+                  });
+                }
+              }
+            } catch (e) {
+              this.showToast('保存失败', 'error');
+            }
+          } else {
+            // 创建新文档
+            try {
+              const res = await fetch('/api/collab/documents', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  title: this.article.title || '未命名文档',
+                  content: content
+                })
+              });
+              const json = await res.json();
+              if (json.success) {
+                this.documentId = json.data.id;
+                window.history.replaceState(null, '', '/editor/' + json.data.id);
+                this.lastSaved = new Date().toLocaleTimeString();
+                this.showToast('文档已创建', 'success');
+              }
+            } catch (e) {
+              this.showToast('创建失败', 'error');
+            }
+          }
+        },
+
+        async saveArticleInfo() {
+          if (!this.documentId || this.documentId === 'editor') return;
+          try {
+            await fetch('/api/collab/documents/' + this.documentId, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                title: this.article.title,
+                summary: this.article.summary,
+                cover_image: this.article.coverImage
+              })
+            });
+          } catch (e) { }
+        },
+
+        // ============ AI 聊天 ============
+        async sendAiMessage() {
+          const msg = this.aiInput.trim();
+          if (!msg || this.aiLoading) return;
+
+          // 添加用户消息
+          this.aiMessages.push({ role: 'user', content: msg });
+          this.aiInput = '';
+          this.aiLoading = true;
+          this.scrollAiToBottom();
+
+          try {
+            // 获取当前编辑内容作为上下文
+            const context = this.getEditorContent();
+            const history = this.aiMessages.slice(-10);
+
+            const res = await fetch('/api/ai/chat', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                message: msg,
+                documentId: this.documentId,
+                context: context,
+                history: history
+              })
+            });
+            const json = await res.json();
+
+            if (json.success) {
+              this.aiMessages.push({ role: 'assistant', content: json.data.reply });
+            } else {
+              this.aiMessages.push({
+                role: 'assistant',
+                content: '⚠️ AI 服务暂时不可用，请检查 OpenAI API Key 配置。'
+              });
+            }
+          } catch (e) {
+            this.aiMessages.push({
+              role: 'assistant',
+              content: '⚠️ 网络错误，请稍后重试。'
+            });
+          } finally {
+            this.aiLoading = false;
+            this.scrollAiToBottom();
+          }
+        },
+
+        async loadAiHistory() {
+          if (!this.documentId || this.documentId === 'editor') return;
+          try {
+            const res = await fetch('/api/ai/history/' + this.documentId);
+            const json = await res.json();
+            if (json.success && json.data.length > 0) {
+              this.aiMessages = json.data.map(c => ({
+                role: c.role,
+                content: c.content
+              }));
+            }
+          } catch (e) { }
+        },
+
+        scrollAiToBottom() {
+          this.$nextTick(() => {
+            const el = this.$refs.aiMessages;
+            if (el) el.scrollTop = el.scrollHeight;
+          });
+        },
+
+        formatAiMessage(text) {
+          // 简单 markdown 转 HTML
+          return text
+            .replace(/\n/g, '<br>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/`(.*?)`/g, '<code style="background:#f0f0f0;padding:1px 4px;border-radius:3px;">$1</code>');
+        },
+
+        // ============ 微信同步 ============
+        async syncToWechat() {
+          this.showToast('同步到公众号功能需要先登录微信公众号', 'info');
+        },
+
+        async copyToClipboard() {
+          const content = this.getEditorContent();
+          if (!content) {
+            this.showToast('编辑器内容为空', 'error');
+            return;
+          }
+          try {
+            // 创建临时元素复制 HTML
+            const blob = new Blob([content], { type: 'text/html' });
+            const data = [new ClipboardItem({ 'text/html': blob })];
+            await navigator.clipboard.write(data);
+            this.showToast('已复制 HTML 到剪贴板', 'success');
+          } catch (e) {
+            // fallback
+            const textarea = document.createElement('textarea');
+            textarea.value = content;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            this.showToast('已复制到剪贴板', 'success');
+          }
+        },
+
+        // ============ 导航 ============
+        goBack() {
+          window.location.href = '/';
+        },
+
+        // ============ Toast ============
+        showToast(message, type = 'info') {
+          this.toast = { show: true, message, type };
+          setTimeout(() => { this.toast.show = false; }, 2500);
+        }
+      }
+    });
+  </script>
+
+  <style>
+    [v-cloak] { display: none !important; }
+
+    /* fallback 编辑器占位 */
+    #fallback-editor:empty::before {
+      content: '在这里开始编辑文章…';
+      color: var(--text-muted);
+      font-size: 16px;
+    }
+
+    #fallback-editor:focus {
+      outline: none;
+    }
+
+    #fallback-editor h1, #fallback-editor h2, #fallback-editor h3 {
+      margin: 0.5em 0;
+    }
+
+    #fallback-editor p {
+      margin: 0.5em 0;
+      line-height: 1.8;
+    }
+
+    #fallback-editor blockquote {
+      border-left: 3px solid var(--yellow-accent);
+      padding-left: 12px;
+      color: var(--text-secondary);
+      margin: 0.5em 0;
+    }
+
+    #fallback-editor img {
+      max-width: 100%;
+      border-radius: 8px;
+    }
+  </style>
+</body>
+</html>

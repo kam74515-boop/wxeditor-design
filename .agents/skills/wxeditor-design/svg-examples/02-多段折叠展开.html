@@ -1,0 +1,91 @@
+<!-- 核心模式：多层淡出 + 展开（串联多段内容） -->
+<!-- 用途：一篇文章有多个折叠区，每段内容独立点击展开 -->
+<!-- 要点：每个 section 块是独立的，互不影响 -->
+
+<!-- ===== 第一段：点击展开 ===== -->
+<section style="text-align: center; margin: 0; box-sizing: border-box;">
+  <section style="display: inline-block; width: 100%; overflow: hidden; box-sizing: border-box;">
+    <section style="height: 0px; overflow: visible; box-sizing: border-box;">
+      <section style="display: flex; box-sizing: border-box;">
+        <section style="width: 100%; box-sizing: border-box;">
+          <section style="line-height: 0; box-sizing: border-box;">
+            <img src="https://placehold.co/750x800/E8F5E9/333?text=第1段隐藏内容"
+                 style="width: 100%; height: auto; display: block; box-sizing: border-box;" />
+          </section>
+        </section>
+      </section>
+    </section>
+    <section style="overflow: visible; box-sizing: border-box;">
+      <section style="width: 100%; box-sizing: border-box;">
+        <section style="pointer-events: none; box-sizing: border-box;">
+          <svg width="100%" xmlns="http://www.w3.org/2000/svg"
+               style="display: block; max-width: none !important; pointer-events: none; box-sizing: border-box;"
+               viewBox="0 0 750 400" opacity="1">
+            <svg width="100%" height="100%">
+              <rect fill="#FFFFFF" width="100%" height="100%" x="0%" y="0%"></rect>
+              <rect style="pointer-events: auto; opacity: 0;" width="100%" height="100%">
+                <animate from="0" to="0" dur="0" begin="click + 0.1s" fill="freeze" attributeName="width"></animate>
+              </rect>
+              <svg x="0%" y="0%" width="100%" height="100%">
+                <foreignObject width="100%" height="100%">
+                  <svg style="display: block; width: 100%; background-size: cover; background-position: center;
+                              background-repeat: no-repeat; pointer-events: none; user-select: none;
+                              background-image: url('https://placehold.co/750x400/2196F3/FFF?text=▼ 点击展开第1段');"
+                       viewBox="0 0 750 400" xmlns="http://www.w3.org/2000/svg"></svg>
+                </foreignObject>
+              </svg>
+            </svg>
+            <animate attributeName="opacity" from="1" to="0"
+                     begin="click" dur="0.3s" fill="freeze" restart="never"></animate>
+            <animate attributeName="width" from="100%" to="300%"
+                     begin="click + 0.3s" dur="1.5s" fill="freeze" restart="never"></animate>
+          </svg>
+        </section>
+      </section>
+    </section>
+  </section>
+</section>
+
+<!-- ===== 第二段：点击展开 ===== -->
+<section style="text-align: center; margin: 0; box-sizing: border-box;">
+  <section style="display: inline-block; width: 100%; overflow: hidden; box-sizing: border-box;">
+    <section style="height: 0px; overflow: visible; box-sizing: border-box;">
+      <section style="display: flex; box-sizing: border-box;">
+        <section style="width: 100%; box-sizing: border-box;">
+          <section style="line-height: 0; box-sizing: border-box;">
+            <img src="https://placehold.co/750x800/FFF3E0/333?text=第2段隐藏内容"
+                 style="width: 100%; height: auto; display: block; box-sizing: border-box;" />
+          </section>
+        </section>
+      </section>
+    </section>
+    <section style="overflow: visible; box-sizing: border-box;">
+      <section style="width: 100%; box-sizing: border-box;">
+        <section style="pointer-events: none; box-sizing: border-box;">
+          <svg width="100%" xmlns="http://www.w3.org/2000/svg"
+               style="display: block; max-width: none !important; pointer-events: none; box-sizing: border-box;"
+               viewBox="0 0 750 400" opacity="1">
+            <svg width="100%" height="100%">
+              <rect fill="#FFFFFF" width="100%" height="100%" x="0%" y="0%"></rect>
+              <rect style="pointer-events: auto; opacity: 0;" width="100%" height="100%">
+                <animate from="0" to="0" dur="0" begin="click + 0.1s" fill="freeze" attributeName="width"></animate>
+              </rect>
+              <svg x="0%" y="0%" width="100%" height="100%">
+                <foreignObject width="100%" height="100%">
+                  <svg style="display: block; width: 100%; background-size: cover; background-position: center;
+                              background-repeat: no-repeat; pointer-events: none; user-select: none;
+                              background-image: url('https://placehold.co/750x400/FF9800/FFF?text=▼ 点击展开第2段');"
+                       viewBox="0 0 750 400" xmlns="http://www.w3.org/2000/svg"></svg>
+                </foreignObject>
+              </svg>
+            </svg>
+            <animate attributeName="opacity" from="1" to="0"
+                     begin="click" dur="0.3s" fill="freeze" restart="never"></animate>
+            <animate attributeName="width" from="100%" to="300%"
+                     begin="click + 0.3s" dur="1.5s" fill="freeze" restart="never"></animate>
+          </svg>
+        </section>
+      </section>
+    </section>
+  </section>
+</section>

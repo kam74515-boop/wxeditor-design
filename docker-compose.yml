@@ -1,0 +1,78 @@
+services:
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: wxeditor
+      POSTGRES_USER: wxeditor
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-wxeditor_secret}
+      TZ: Asia/Shanghai
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wxeditor"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 后端 API 服务
+  wxeditor-server:
+    build: ./server
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - TZ=Asia/Shanghai
+      - DB_CLIENT=pg
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=wxeditor
+      - DB_USER=wxeditor
+      - DB_PASSWORD=${DB_PASSWORD:-wxeditor_secret}
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-change-me-refresh}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
+      - OPENAI_MODEL=${OPENAI_MODEL:-qwen3.5-plus}
+    volumes:
+      - ./server/data:/app/data
+      - ./server/public/uploads:/app/public/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/auth', r => { process.exit(r.statusCode < 500 ? 0 : 1) })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 前端构建
+  web:
+    build: ./web
+    environment:
+      - VITE_API_BASE=/api
+    volumes:
+      - web-dist:/app/dist
+    command: sh -c "npm run build && cp -r dist/* /app/dist/"
+
+  # Nginx 反向代理
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - web-dist:/usr/share/nginx/html:ro
+    depends_on:
+      - wxeditor-server
+      - web
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  web-dist:

@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>协作编辑器 - UEditor 微信公众号版</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <link rel="stylesheet" href="/public/collab-style.css">
+</head>
+<body>
+  <div class="collab-container">
+    <!-- 左侧协作面板 -->
+    <aside class="collab-sidebar">
+      <div class="sidebar-header">
+        <h3>👥 协作空间</h3>
+        <span class="online-count">0 人在线</span>
+      </div>
+      
+      <!-- 在线用户列表 -->
+      <div class="users-section">
+        <h4>在线用户</h4>
+        <ul id="usersList" class="users-list">
+          <!-- 动态生成 -->
+        </ul>
+      </div>
+      
+      <!-- 编辑状态 -->
+      <div class="edit-status" id="editStatus">
+        <span class="status-text">点击"开始编辑"获取编辑权限</span>
+      </div>
+      
+      <!-- 操作按钮 -->
+      <div class="action-buttons">
+        <button id="btnStartEdit" class="btn btn-primary" onclick="requestEditPermission()">
+          ✏️ 开始编辑
+        </button>
+        <button id="btnReleaseEdit" class="btn btn-secondary" onclick="releaseEditPermission()" style="display:none;">
+          🔓 结束编辑
+        </button>
+        <button id="btnSave" class="btn btn-success" onclick="saveDocument()">
+          💾 保存文档
+        </button>
+      </div>
+      
+      <!-- 版本历史 -->
+      <div class="history-section">
+        <h4>📝 版本历史</h4>
+        <ul id="historyList" class="history-list">
+          <!-- 动态生成 -->
+        </ul>
+      </div>
+    </aside>
+    
+    <!-- 主编辑区 -->
+    <main class="editor-main">
+      <!-- 顶部信息栏 -->
+      <header class="editor-header">
+        <div class="document-info">
+          <input type="text" id="docTitle" class="doc-title" placeholder="文档标题" value="">
+          <span class="doc-version">版本: <span id="versionNumber">1</span></span>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-primary" onclick="showShareModal()">🔗 分享</button>
+          <button class="btn btn-success" onclick="syncToWechat()">☁️ 同步到公众号</button>
+          <button class="btn btn-secondary" onclick="copyToClipboard()">📋 复制</button>
+        </div>
+      </header>
+      
+      <!-- 协作提示 -->
+      <div class="collab-notice" id="collabNotice"></div>
+      
+      <!-- 编辑器容器 -->
+      <div class="editor-wrapper">
+        <!-- 其他用户光标层 -->
+        <div id="cursorsLayer" class="cursors-layer"></div>
+        
+        <!-- 编辑器 -->
+        <div id="editorContainer" class="editor-container">
+          <iframe id="editorFrame" src="/editor" frameborder="0"></iframe>
+        </div>
+      </div>
+      
+      <!-- 底部状态栏 -->
+      <footer class="editor-footer">
+        <span class="sync-status" id="syncStatus">未连接</span>
+        <span class="last-saved" id="lastSaved"></span>
+      </footer>
+    </main>
+    
+    <!-- 右侧聊天面板 -->
+    <aside class="chat-sidebar">
+      <div class="chat-header">
+        <h4>💬 团队聊天</h4>
+      </div>
+      <div class="chat-messages" id="chatMessages">
+        <div class="chat-welcome">欢迎来到协作编辑！</div>
+      </div>
+      <div class="chat-input">
+        <input type="text" id="chatInput" placeholder="输入消息..." onkeypress="handleChatKeypress(event)">
+        <button onclick="sendChatMessage()">发送</button>
+      </div>
+    </aside>
+  </div>
+
+  <!-- 用户设置弹窗 -->
+  <div id="userModal" class="modal">
+    <div class="modal-content">
+      <h3>设置您的信息</h3>
+      <input type="text" id="userName" placeholder="您的昵称" value="">
+      <button onclick="joinDocument()">加入协作</button>
+    </div>
+  </div>
+
+  <!-- 分享弹窗 -->
+  <div id="shareModal" class="modal">
+    <div class="modal-content">
+      <h3>🔗 分享文档</h3>
+      <p>复制下方链接邀请他人协作：</p>
+      <div class="share-link">
+        <input type="text" id="shareUrl" readonly>
+        <button onclick="copyShareUrl()">复制</button>
+      </div>
+      <button onclick="closeShareModal()">关闭</button>
+    </div>
+  </div>
+
+  <script>
+    // 获取文档ID
+    const documentId = location.pathname.split('/').pop() || 'default-doc';
+    let socket = null;
+    let userInfo = { id: '', name: '' };
+    let isEditing = false;
+    let editorWindow = null;
+    let lastContent = '';
+    let contentCheckInterval = null;
+
+    // 页面加载
+    window.onload = function() {
+      showUserModal();
+      setupEditorFrame();
+    };
+
+    // 设置编辑器 iframe
+    function setupEditorFrame() {
+      const frame = document.getElementById('editorFrame');
+      frame.onload = function() {
+        editorWindow = frame.contentWindow;
+      };
+    }
+
+    // 显示用户设置弹窗
+    function showUserModal() {
+      document.getElementById('userModal').style.display = 'flex';
+    }
+
+    // 加入文档
+    function joinDocument() {
+      const name = document.getElementById('userName').value.trim();
+      if (!name) {
+        alert('请输入昵称');
+        return;
+      }
+
+      userInfo = {
+        id: 'user-' + Date.now(),
+        name: name,
+        avatar: ''
+      };
+
+      document.getElementById('userModal').style.display = 'none';
+      initSocket();
+    }
+
+    // 初始化 Socket
+    function initSocket() {
+      socket = io();
+
+      // 加入文档
+      socket.emit('join-document', {
+        documentId: documentId,
+        userInfo: userInfo
+      });
+
+      // 连接成功
+      socket.on('connect', () => {
+        updateSyncStatus('已连接', 'connected');
+      });
+
+      // 断开连接
+      socket.on('disconnect', () => {
+        updateSyncStatus('已断开', 'disconnected');
+      });
+
+      // 成功加入文档
+      socket.on('document-joined', (data) => {
+        console.log('Joined document:', data);
+        if (data.document.content) {
+          // 加载文档内容
+          loadDocumentContent(data.document.content);
+        }
+        document.getElementById('docTitle').value = data.document.title || '';
+        document.getElementById('versionNumber').textContent = data.document.version;
+        updateUsersList(data.users);
+        startContentSync();
+      });
+
+      // 用户加入
+      socket.on('user-joined', (data) => {
+        addSystemMessage(`${data.user.name} 加入了协作`);
+        updateOnlineCount(data.userCount);
+      });
+
+      // 用户离开
+      socket.on('user-left', (data) => {
+        updateOnlineCount(data.userCount);
+        removeUserCursor(data.userId);
+      });
+
+      // 文档更新
+      socket.on('document-updated', (data) => {
+        if (!isEditing && data.changes.fullContent) {
+          loadDocumentContent(data.changes.fullContent);
+        }
+        document.getElementById('versionNumber').textContent = data.version;
+        showNotice(`文档已更新 - ${data.updatedBy.name}`);
+      });
+
+      // 获得编辑权限
+      socket.on('edit-granted', () => {
+        isEditing = true;
+        document.getElementById('btnStartEdit').style.display = 'none';
+        document.getElementById('btnReleaseEdit').style.display = 'block';
+        document.getElementById('editStatus').innerHTML = '<span class="status-text editing">📝 您正在编辑文档</span>';
+        enableEditor();
+      });
+
+      // 编辑被拒绝
+      socket.on('edit-denied', (data) => {
+        alert(`无法编辑：${data.reason} (被 ${data.lockedBy} 锁定)`);
+      });
+
+      // 释放编辑权限
+      socket.on('edit-released', () => {
+        isEditing = false;
+        document.getElementById('btnStartEdit').style.display = 'block';
+        document.getElementById('btnReleaseEdit').style.display = 'none';
+        document.getElementById('editStatus').innerHTML = '<span class="status-text">点击"开始编辑"获取编辑权限</span>';
+        disableEditor();
+      });
+
+      // 文档被锁定
+      socket.on('document-locked', (data) => {
+        document.getElementById('editStatus').innerHTML = `<span class="status-text locked">🔒 被 ${data.lockedBy.name} 编辑中</span>`;
+      });
+
+      // 文档解锁
+      socket.on('document-unlocked', () => {
+        if (!isEditing) {
+          document.getElementById('editStatus').innerHTML = '<span class="status-text">点击"开始编辑"获取编辑权限</span>';
+        }
+      });
+
+      // 光标移动
+      socket.on('cursor-moved', (data) => {
+        updateUserCursor(data);
+      });
+
+      // 选择区域变更
+      socket.on('selection-changed', (data) => {
+        updateUserSelection(data);
+      });
+
+      // 聊天消息
+      socket.on('chat-message', (data) => {
+        addChatMessage(data);
+      });
+
+      // 文档保存
+      socket.on('document-saved', (data) => {
+        document.getElementById('lastSaved').textContent = `最后保存: ${new Date(data.timestamp).toLocaleTimeString()}`;
+        showNotice(`文档已保存 - ${data.savedBy.name}`);
+      });
+
+      // 用户列表更新
+      socket.on('users-list', (data) => {
+        updateUsersList(data.users);
+      });
+    }
+
+    // 请求编辑权限
+    function requestEditPermission() {
+      if (!socket) return;
+      socket.emit('request-edit', { documentId: documentId });
+    }
+
+    // 释放编辑权限
+    function releaseEditPermission() {
+      if (!socket) return;
+      socket.emit('release-edit', { documentId: documentId });
+    }
+
+    // 启动内容同步
+    function startContentSync() {
+      // 定期检查编辑器内容变化
+      contentCheckInterval = setInterval(() => {
+        if (!isEditing || !editorWindow || !editorWindow.UE) return;
+        
+        try {
+          const editor = editorWindow.UE.getEditor('editor');
+          if (editor) {
+            const currentContent = editor.getContent();
+            if (currentContent !== lastContent) {
+              lastContent = currentContent;
+              socket.emit('document-change', {
+                documentId: documentId,
+                changes: { fullContent: currentContent },
+                version: parseInt(document.getElementById('versionNumber').textContent),
+                mode: 'lock'
+              });
+            }
+          }
+        } catch (e) {
+          console.error('Content sync error:', e);
+        }
+      }, 1000);
+    }
+
+    // 加载文档内容
+    function loadDocumentContent(content) {
+      if (!editorWindow || !editorWindow.UE) return;
+      
+      try {
+        const editor = editorWindow.UE.getEditor('editor');
+        if (editor) {
+          editor.setContent(content);
+        }
+      } catch (e) {
+        console.error('Load content error:', e);
+      }
+    }
+
+    // 启用编辑器
+    function enableEditor() {
+      if (!editorWindow) return;
+      // 移除遮罩层等禁用效果
+    }
+
+    // 禁用编辑器
+    function disableEditor() {
+      if (!editorWindow) return;
+      // 添加遮罩层等禁用效果
+    }
+
+    // 保存文档
+    function saveDocument() {
+      if (!socket || !editorWindow) return;
+      
+      try {
+        const editor = editorWindow.UE.getEditor('editor');
+        const content = editor ? editor.getContent() : '';
+        const title = document.getElementById('docTitle').value;
+        
+        socket.emit('save-document', {
+          documentId: documentId,
+          content: content,
+          title: title
+        });
+      } catch (e) {
+        console.error('Save error:', e);
+      }
+    }
+
+    // 发送聊天消息
+    function sendChatMessage() {
+      const input = document.getElementById('chatInput');
+      const message = input.value.trim();
+      if (!message || !socket) return;
+      
+      socket.emit('chat-message', {
+        documentId: documentId,
+        message: message
+      });
+      
+      input.value = '';
+    }
+
+    // 处理聊天回车键
+    function handleChatKeypress(event) {
+      if (event.key === 'Enter') {
+        sendChatMessage();
+      }
+    }
+
+    // 添加聊天消息
+    function addChatMessage(data) {
+      const container = document.getElementById('chatMessages');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'chat-message';
+      messageDiv.innerHTML = `
+        <span class="chat-user" style="color:${data.userId === userInfo.id ? '#1890ff' : '#666'};">${data.userName}:</span>
+        <span class="chat-text">${escapeHtml(data.content)}</span>
+        <span class="chat-time">${new Date(data.timestamp).toLocaleTimeString()}</span>
+      `;
+      container.appendChild(messageDiv);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // 添加系统消息
+    function addSystemMessage(text) {
+      const container = document.getElementById('chatMessages');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'chat-system';
+      messageDiv.textContent = text;
+      container.appendChild(messageDiv);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // 更新用户列表
+    function updateUsersList(users) {
+      const list = document.getElementById('usersList');
+      list.innerHTML = users.map(u => `
+        <li class="user-item" data-user-id="${u.id}">
+          <span class="user-avatar" style="background:${u.color};">${u.name.charAt(0)}</span>
+          <span class="user-name">${u.name} ${u.isEditing ? '(编辑中)' : ''}</span>
+          ${u.id === userInfo.id ? '<span class="user-badge">我</span>' : ''}
+        </li>
+      `).join('');
+      
+      updateOnlineCount(users.length);
+    }
+
+    // 更新在线人数
+    function updateOnlineCount(count) {
+      document.querySelector('.online-count').textContent = `${count} 人在线`;
+    }
+
+    // 更新同步状态
+    function updateSyncStatus(text, type) {
+      const status = document.getElementById('syncStatus');
+      status.textContent = text;
+      status.className = `sync-status ${type}`;
+    }
+
+    // 显示通知
+    function showNotice(text) {
+      const notice = document.getElementById('collabNotice');
+      notice.textContent = text;
+      notice.style.opacity = '1';
+      setTimeout(() => {
+        notice.style.opacity = '0';
+      }, 3000);
+    }
+
+    // 更新用户光标
+    function updateUserCursor(data) {
+      // 在编辑器中显示其他用户的光标
+      // 实际实现需要更复杂的坐标映射
+    }
+
+    // 更新用户选择
+    function updateUserSelection(data) {
+      // 在编辑器中显示其他用户的选择区域
+    }
+
+    // 移除用户光标
+    function removeUserCursor(userId) {
+      const cursor = document.querySelector(`[data-cursor-user="${userId}"]`);
+      if (cursor) cursor.remove();
+    }
+
+    // 显示分享弹窗
+    function showShareModal() {
+      const shareUrl = `${location.origin}/collab/${documentId}`;
+      document.getElementById('shareUrl').value = shareUrl;
+      document.getElementById('shareModal').style.display = 'flex';
+    }
+
+    // 关闭分享弹窗
+    function closeShareModal() {
+      document.getElementById('shareModal').style.display = 'none';
+    }
+
+    // 复制分享链接
+    function copyShareUrl() {
+      const input = document.getElementById('shareUrl');
+      input.select();
+      document.execCommand('copy');
+      alert('链接已复制！');
+    }
+
+    // 同步到公众号
+    function syncToWechat() {
+      // 复用单编辑器的同步逻辑
+      if (editorWindow && editorWindow.syncToWechat) {
+        editorWindow.syncToWechat();
+      }
+    }
+
+    // 复制到剪贴板
+    function copyToClipboard() {
+      if (editorWindow && editorWindow.copyToClipboard) {
+        editorWindow.copyToClipboard();
+      }
+    }
+
+    // HTML 转义
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // 页面关闭时清理
+    window.onbeforeunload = function() {
+      if (contentCheckInterval) {
+        clearInterval(contentCheckInterval);
+      }
+      if (socket) {
+        socket.emit('leave-document', { documentId: documentId });
+      }
+    };
+  </script>
+</body>
+</html>

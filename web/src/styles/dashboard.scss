@@ -1,0 +1,313 @@
+/**
+ * dashboard.scss — 仪表盘布局（项目管理/模板库/团队/会员）
+ * 
+ * 对应设计稿: 04-12（除编辑器）使用 TopNavBar + Sidebar + Main 布局
+ */
+
+// 仪表盘整体布局
+.dashboard-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: $layout-light-bg;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+// 顶部导航栏
+.topnav {
+  display: flex;
+  align-items: center;
+  height: 56px;
+  padding: 0 20px;
+  background: $brand-yellow;
+  border-radius: 0 0 12px 12px;
+  gap: 4px;
+  flex-shrink: 0;
+
+  &__logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-right: 16px;
+    font-size: 16px;
+    font-weight: 800;
+    color: $layout-sider-dark;
+    cursor: pointer;
+  }
+
+  &__item {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: rgba(29, 29, 31, 0.6);
+    cursor: pointer;
+    transition: background 150ms ease, color 150ms ease;
+    text-decoration: none;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.05);
+      color: $layout-sider-dark;
+    }
+
+    &--active {
+      background: rgba(0, 0, 0, 0.08);
+      color: $layout-sider-dark;
+      font-weight: 700;
+    }
+  }
+
+  &__spacer { flex: 1; }
+
+  &__right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__badge {
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: $layout-sider-dark;
+    color: #FFFFFF;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 150ms ease;
+    text-decoration: none;
+    &:hover { opacity: 0.85; }
+  }
+
+  &__avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+  }
+}
+
+// 主体区域（Sidebar + Main）
+.dashboard-body {
+  display: flex;
+  flex: 1;
+  gap: 12px;
+  padding: 12px 14px 0;
+  overflow: hidden;
+}
+
+// 侧边栏
+.sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: $brand-yellow;
+  border-radius: 12px;
+  padding: 24px 16px;
+  gap: 4px;
+
+  &__title {
+    font-size: 18px;
+    font-weight: 800;
+    color: $layout-sider-dark;
+    padding: 0 8px 16px;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    color: rgba(29, 29, 31, 0.7);
+    cursor: pointer;
+    transition: background 150ms ease;
+    text-decoration: none;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.5);
+    }
+
+    &--active {
+      background: #FFFFFF;
+      color: $layout-sider-dark;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+  }
+
+  &__spacer { flex: 1; }
+
+  &__action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    border-radius: 999px;
+    background: $layout-sider-dark;
+    color: #FFFFFF;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: opacity 150ms ease;
+    &:hover { opacity: 0.85; }
+  }
+}
+
+// 主要内容区
+.main-content {
+  flex: 1;
+  background: #FFFFFF;
+  border-radius: 12px 12px 0 0;
+  padding: 28px;
+  overflow-y: auto;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  &__title {
+    font-size: 22px;
+    font-weight: 800;
+    color: $layout-sider-dark;
+  }
+
+  &__toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+}
+
+// 搜索栏
+.search-bar {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 14px;
+  gap: 8px;
+  border: 1.5px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  background: #FAFAFA;
+  width: 260px;
+  transition: border-color 200ms ease;
+
+  &:focus-within {
+    border-color: $brand-yellow-active;
+  }
+
+  input {
+    flex: 1;
+    border: none;
+    background: none;
+    outline: none;
+    font-size: 14px;
+    font-family: inherit;
+    &::placeholder { color: rgba(0, 0, 0, 0.3); }
+  }
+}
+
+// 通用卡片
+.card {
+  background: #FFFFFF;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  transition: box-shadow 200ms ease, transform 200ms ease;
+
+  &:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    transform: translateY(-1px);
+  }
+
+  &__title {
+    font-size: 16px;
+    font-weight: 700;
+    color: $layout-sider-dark;
+  }
+
+  &__desc {
+    font-size: 13px;
+    color: rgba(0, 0, 0, 0.5);
+    line-height: 1.5;
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.4);
+  }
+}
+
+// 项目列表
+.project-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+// 模板网格
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+// 团队卡片网格
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+// 统计卡片行
+.stats-row {
+  display: flex;
+  gap: 16px;
+
+  .stat-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 20px;
+    border-radius: 14px;
+    background: #F8F9FA;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+
+    &__label {
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(0, 0, 0, 0.4);
+      text-transform: uppercase;
+    }
+
+    &__value {
+      font-size: 28px;
+      font-weight: 800;
+      color: $layout-sider-dark;
+    }
+
+    &__change {
+      font-size: 12px;
+      font-weight: 600;
+
+      &--up { color: $success; }
+      &--down { color: $error; }
+    }
+
+    &--highlight {
+      background: $brand-yellow;
+    }
+  }
+}

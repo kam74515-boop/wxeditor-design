@@ -1,0 +1,53 @@
+<!-- 核心模式：长按显示 -->
+<!-- 用途：长按某个区域后显示隐藏内容，松手后恢复 -->
+<!-- 原理：touchstart 触发 opacity 0→1，touchend 触发 opacity 1→0 -->
+<!-- 注意：这是可逆的交互，不使用 restart="never" -->
+
+<section style="text-align: center; margin: 0; box-sizing: border-box;">
+  <section style="display: inline-block; width: 100%; overflow: hidden; box-sizing: border-box;">
+    <section style="overflow: visible; box-sizing: border-box;">
+      <section style="width: 100%; box-sizing: border-box;">
+        <section style="pointer-events: none; box-sizing: border-box;">
+          <svg width="100%" xmlns="http://www.w3.org/2000/svg"
+               style="display: block; max-width: none !important; pointer-events: none; box-sizing: border-box;"
+               viewBox="0 0 750 750">
+            <svg width="100%" height="100%">
+
+              <!-- 底层：长按后显示的内容 -->
+              <svg x="0%" y="0%" width="100%" height="100%">
+                <foreignObject width="100%" height="100%">
+                  <svg style="display: block; width: 100%; background-size: cover;
+                              background-position: center; background-repeat: no-repeat;
+                              pointer-events: none; user-select: none;
+                              background-image: url('https://placehold.co/750x750/FF5722/FFF?text=🎉 恭喜发现隐藏内容');"
+                       viewBox="0 0 750 750" xmlns="http://www.w3.org/2000/svg"></svg>
+                </foreignObject>
+              </svg>
+
+              <!-- 顶层遮罩层（长按时隐藏，松手恢复） -->
+              <svg x="0%" y="0%" width="100%" height="100%" opacity="1">
+                <foreignObject width="100%" height="100%">
+                  <svg style="display: block; width: 100%; background-size: cover;
+                              background-position: center; background-repeat: no-repeat;
+                              pointer-events: none; user-select: none;
+                              background-image: url('https://placehold.co/750x750/607D8B/FFF?text=👆 长按此处查看');"
+                       viewBox="0 0 750 750" xmlns="http://www.w3.org/2000/svg"></svg>
+                </foreignObject>
+                <!-- 长按：隐藏遮罩 -->
+                <animate attributeName="opacity" from="1" to="0"
+                         begin="touchstart" dur="0.3s" fill="freeze"></animate>
+                <!-- 松手：恢复遮罩 -->
+                <animate attributeName="opacity" from="0" to="1"
+                         begin="touchend" dur="0.3s" fill="freeze"></animate>
+              </svg>
+
+              <!-- 热区 -->
+              <rect width="100%" height="100%" fill="transparent"
+                    style="pointer-events: auto; box-sizing: border-box;"></rect>
+            </svg>
+          </svg>
+        </section>
+      </section>
+    </section>
+  </section>
+</section>

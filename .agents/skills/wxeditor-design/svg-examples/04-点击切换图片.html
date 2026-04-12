@@ -1,0 +1,67 @@
+<!-- 核心模式：点击切换图片（轮播） -->
+<!-- 用途：点击在多张图片之间循环切换 -->
+<!-- 原理：多个 foreignObject 层叠，通过 opacity 动画控制显示哪一张 -->
+<!-- 每张图片是一个独立的 svg 层，初始 opacity=0，点击后依次 opacity=1 -->
+
+<section style="text-align: center; margin: 0; box-sizing: border-box;">
+  <section style="display: inline-block; width: 100%; overflow: hidden; box-sizing: border-box;">
+    <section style="overflow: visible; box-sizing: border-box;">
+      <section style="width: 100%; box-sizing: border-box;">
+        <section style="pointer-events: none; box-sizing: border-box;">
+          <svg width="100%" xmlns="http://www.w3.org/2000/svg"
+               style="display: block; max-width: none !important; pointer-events: none; box-sizing: border-box;"
+               viewBox="0 0 750 1000">
+            <svg width="100%" height="100%">
+
+              <!-- 第1张图（默认显示） -->
+              <svg x="0%" y="0%" width="100%" height="100%">
+                <foreignObject width="100%" height="100%">
+                  <svg style="display: block; width: 100%; background-size: cover;
+                              background-position: center; background-repeat: no-repeat;
+                              pointer-events: none; user-select: none;
+                              background-image: url('https://placehold.co/750x1000/E91E63/FFF?text=图片1 点击切换→');"
+                       viewBox="0 0 750 1000" xmlns="http://www.w3.org/2000/svg"></svg>
+                </foreignObject>
+              </svg>
+
+              <!-- 第2张图（初始隐藏） -->
+              <svg x="0%" y="0%" width="100%" height="100%" opacity="0">
+                <foreignObject width="100%" height="100%">
+                  <svg style="display: block; width: 100%; background-size: cover;
+                              background-position: center; background-repeat: no-repeat;
+                              pointer-events: none; user-select: none;
+                              background-image: url('https://placehold.co/750x1000/9C27B0/FFF?text=图片2 点击切换→');"
+                       viewBox="0 0 750 1000" xmlns="http://www.w3.org/2000/svg"></svg>
+                </foreignObject>
+                <!-- 第1次点击：显示第2张 -->
+                <animate attributeName="opacity" from="0" to="1"
+                         begin="click" dur="0.3s" fill="freeze"></animate>
+                <!-- 第2次点击：隐藏第2张（露出第3张） -->
+                <animate attributeName="opacity" from="1" to="0"
+                         begin="click + 0.3s" dur="0" fill="freeze"></animate>
+              </svg>
+
+              <!-- 第3张图（初始隐藏） -->
+              <svg x="0%" y="0%" width="100%" height="100%" opacity="0">
+                <foreignObject width="100%" height="100%">
+                  <svg style="display: block; width: 100%; background-size: cover;
+                              background-position: center; background-repeat: no-repeat;
+                              pointer-events: none; user-select: none;
+                              background-image: url('https://placehold.co/750x1000/4CAF50/FFF?text=图片3（最后一张）');"
+                       viewBox="0 0 750 1000" xmlns="http://www.w3.org/2000/svg"></svg>
+                </foreignObject>
+                <!-- 第2次点击：显示第3张 -->
+                <animate attributeName="opacity" from="0" to="1"
+                         begin="click + 0.3s" dur="0.3s" fill="freeze"></animate>
+              </svg>
+
+              <!-- 全局热区 -->
+              <rect width="100%" height="100%" fill="transparent"
+                    style="pointer-events: auto; box-sizing: border-box;"></rect>
+            </svg>
+          </svg>
+        </section>
+      </section>
+    </section>
+  </section>
+</section>
