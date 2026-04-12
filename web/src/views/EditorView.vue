@@ -190,7 +190,7 @@
         <div class="chat-history-popup">
           <div class="chat-history-header">
             <span>历史对话</span>
-            <button class="chat-history-close" @click="showChatHistory = false"><X :size="14" /></button>
+            <button class="chat-history-close" @click="showChatHistory = false"><el-icon><Close /></el-icon></button>
           </div>
           <div class="chat-history-body">
             <div v-if="chatHistoryList.length === 0" class="chat-history-empty">暂无历史对话</div>
@@ -199,7 +199,7 @@
                 <span class="chat-history-label">{{ item.title }}</span>
                 <span class="chat-history-time">{{ item.time }}</span>
               </div>
-              <button class="chat-history-del" @click.stop="deleteChatHistory(idx)" title="删除"><X :size="12" /></button>
+              <button class="chat-history-del" @click.stop="deleteChatHistory(idx)" title="删除"><el-icon><Close /></el-icon></button>
             </div>
           </div>
         </div>
@@ -255,7 +255,7 @@
         <!-- 附件预览 -->
         <div v-if="aiStore.attachedFile" class="ai-file-bar">
           <span><svg viewBox="0 0 20 20" width="12" height="12" fill="#2563eb" style="vertical-align:-1px;margin-right:3px;"><path d="M15.6 4.4a1.5 1.5 0 0 0-2.1 0L5 12.9V15h2.1l8.5-8.5a1.5 1.5 0 0 0 0-2.1zM3 17h14v1H3v-1z"/></svg> {{ aiStore.attachedFile.name }}</span>
-          <button @click="aiStore.attachedFile = null"><X :size="12" /></button>
+          <button @click="aiStore.attachedFile = null"><el-icon><Close /></el-icon></button>
         </div>
 
         <!-- 输入区 -->
@@ -304,7 +304,7 @@ import { storeToRefs } from 'pinia';
 import { useEditorStore, useAIStore } from '@/stores';
 import { initUEditor, destroyUEditor } from '@/utils';
 import { injectCustomColorPicker } from '@/utils/color-picker';
-import { Picture, Position, Promotion, Loading, Crop, FullScreen, X } from '@element-plus/icons-vue';
+import { Picture, Position, Promotion, Loading, Crop, FullScreen, Close } from '@element-plus/icons-vue';
 import { promptTemplates as aiPromptTemplates } from '@/stores/ai';
 import type { PromptTemplate } from '@/stores/ai';
 import type { ChatMessage } from '@/types';

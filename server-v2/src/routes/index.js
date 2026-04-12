@@ -12,4 +12,5 @@ module.exports = function registerRoutes(app) {
   app.use('/api/wechat', require('../controllers/wechat.ctrl'));
   app.use('/api/drafts', require('../controllers/draft.ctrl'));
   app.use('/api/ueditor', require('../controllers/ueditor.ctrl'));
+  app.use('/api/ai-agent', require('../controllers/aiAgent.ctrl'));
 };

@@ -62,7 +62,7 @@ const MembershipService = {
     };
   },
 
-  async verifyPayment({ orderNo, transactionId, status }) {
+  async verifyPayment({ orderNo, transactionId, status, reason }) {
     const order = await db('orders').where({ id: orderNo }).first();
     if (!order) throw Object.assign(new Error('订单不存在'), { statusCode: 404 });
 
@@ -84,7 +84,7 @@ const MembershipService = {
       return { success: true, message: '支付验证成功' };
     }
 
-    await db('orders').where({ id: orderNo }).update({ payment_status: 'failed', failed_reason: req.body.reason });
+    await db('orders').where({ id: orderNo }).update({ payment_status: 'failed', failed_reason: reason || '' });
     return { success: false, message: '支付失败' };
   },
 

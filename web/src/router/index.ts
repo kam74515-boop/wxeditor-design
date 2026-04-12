@@ -10,10 +10,6 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/HomeView.vue'),
     meta: { title: '首页', requiresAuth: false },
   },
-  {
-    path: '/dashboard',
-    redirect: '/projects',
-  },
 
   // ========== 认证页面（仅未登录用户可见）==========
   {
@@ -27,6 +23,21 @@ const routes: RouteRecordRaw[] = [
     name: 'Register',
     component: () => import('@/views/auth/RegisterView.vue'),
     meta: { title: '注册', requiresAuth: false, guestOnly: true },
+  },
+
+  // ========== 仪表盘布局包裹的路由 ==========
+  {
+    path: '/dashboard',
+    component: () => import('@/layouts/DashboardLayout.vue'),
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: '',
+        name: 'Dashboard',
+        component: () => import('@/views/DashboardHomeView.vue'),
+        meta: { title: '仪表盘', isDashboardHome: true },
+      },
+    ],
   },
 
   // ========== 编辑器（不动） ==========
@@ -59,12 +70,36 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '模板库', requiresAuth: true },
   },
 
+  // ========== 素材库 ==========
+  {
+    path: '/materials',
+    name: 'Materials',
+    component: () => import('@/views/TemplatesView.vue'), // reuse templates view as placeholder
+    meta: { title: '素材库', requiresAuth: true },
+  },
+
+  // ========== AI 写作 ==========
+  {
+    path: '/ai-writing',
+    name: 'AIWriting',
+    component: () => import('@/views/EditorView.vue'),
+    meta: { title: 'AI 写作', requiresAuth: true },
+  },
+
   // ========== 个人中心 ==========
   {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/views/ProfileView.vue'),
     meta: { title: '个人中心', requiresAuth: true },
+  },
+
+  // ========== 设置 ==========
+  {
+    path: '/settings',
+    name: 'Settings',
+    component: () => import('@/views/ProfileView.vue'),
+    meta: { title: '设置', requiresAuth: true },
   },
 
   // ========== 团队 ==========
@@ -95,16 +130,16 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '定价', requiresAuth: false },
   },
   {
-    path: '/checkout',
-    name: 'Checkout',
-    component: () => import('@/views/membership/CheckoutView.vue'),
-    meta: { title: '结算', requiresAuth: true },
-  },
-  {
     path: '/membership',
     name: 'Membership',
     component: () => import('@/views/membership/MembershipView.vue'),
     meta: { title: '会员', requiresAuth: true },
+  },
+  {
+    path: '/checkout',
+    name: 'Checkout',
+    component: () => import('@/views/membership/CheckoutView.vue'),
+    meta: { title: '结算', requiresAuth: true },
   },
 
   // ========== 管理后台（嵌套路由） ==========
