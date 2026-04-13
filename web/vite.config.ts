@@ -58,20 +58,11 @@ export default defineConfig({
             if (id.includes('@element-plus/icons-vue')) {
               return 'ep-icons';
             }
-            if (id.includes('element-plus/es/components')) {
-              // Split large element-plus into sub-chunks by component group
-              if (id.includes('/table') || id.includes('/virtual-list')) {
-                return 'ep-table';
-              }
-              if (id.includes('/upload') || id.includes('/image')) {
-                return 'ep-upload';
-              }
-              if (id.includes('/form') || id.includes('/input') || id.includes('/select') || id.includes('/checkbox') || id.includes('/radio') || id.includes('/switch') || id.includes('/slider') || id.includes('/time') || id.includes('/date') || id.includes('/cascader') || id.includes('/transfer') || id.includes('/rate') || id.includes('/color') || id.includes('/tree-select')) {
-                return 'ep-form';
-              }
-              return 'ep-core';
-            }
+            // element-plus has internal circular deps - must be in ONE chunk
             if (id.includes('element-plus')) {
+              if (id.includes('@element-plus/icons-vue')) {
+                return 'ep-icons';
+              }
               return 'ep-core';
             }
             if (id.includes('lodash-es')) {
