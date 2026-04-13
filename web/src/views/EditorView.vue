@@ -6,11 +6,11 @@
       <!-- 1.1 独立的用户卡片 block -->
       <div class="sider-block user-login-card">
         <div class="user-avatar">
-          <span class="avatar-text">K</span>
+          <span class="avatar-text">{{ userStore.userInitial }}</span>
         </div>
         <div class="user-info">
-          <span class="user-name">Karl</span>
-          <span class="user-role">已登录 · 微信公众号编辑</span>
+          <span class="user-name">{{ userStore.userInfo?.nickname || userStore.userInfo?.username || '用户' }}</span>
+          <span class="user-role">{{ userStore.isLoggedIn ? '已登录' : '未登录' }} · 微信公众号编辑</span>
         </div>
         <BackButton to="/projects" label="项目列表" variant="ghost" size="sm" :show-label="true" />
       </div>
@@ -311,7 +311,7 @@
 import { computed, onMounted, onBeforeUnmount, watch, reactive, ref } from 'vue';
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { useEditorStore, useAIStore } from '@/stores';
+import { useEditorStore, useAIStore, useUserStore } from '@/stores';
 import { initUEditor, destroyUEditor } from '@/utils';
 import { injectCustomColorPicker } from '@/utils/color-picker';
 import { Picture, Position, Promotion, Loading, Crop, FullScreen, Close } from '@element-plus/icons-vue';
@@ -329,6 +329,7 @@ const route = useRoute();
 const router = useRouter();
 const editorStore = useEditorStore();
 const aiStore = useAIStore();
+const userStore = useUserStore();
 
 onBeforeRouteLeave(async (to, _from, next) => {
   if (!editorStore.hasUnsavedChanges) return next();
@@ -1011,12 +1012,21 @@ function handlePreview() {
   }
 }
 
-function handleSave() {
+async function handleSave() {
   if (!ueditorInstance) return;
   const content = ueditorInstance.getContent();
   editorStore.setContent(content);
-  // TODO: 调用后端接口保存
-  console.log('保存内容:', content.substring(0, 100) + '...');
+  try {
+    await editorStore.save();
+    // 如果是新建后第一次保存，URL 中可能还没有 documentId，需要更新
+    if (currentProject.value?.id && !route.params.documentId) {
+      router.replace(`/editor/${currentProject.value.id}`);
+    }
+    ElMessage.success('保存成功');
+  } catch (err) {
+    console.error('保存失败:', err);
+    ElMessage.error('保存失败，请重试');
+  }
 }
 
 // 定时更新字数统计
