@@ -13,6 +13,9 @@ const SchedulerService = require('./services/scheduler.service');
 const app = express();
 const server = http.createServer(app);
 
+// Trust reverse proxy (Nginx)
+app.set('trust proxy', 1);
+
 const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
   : [];
