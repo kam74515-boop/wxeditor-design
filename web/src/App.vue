@@ -1,19 +1,31 @@
 <template>
   <div v-if="appStore.isNetworkError" class="global-network-error">
     <el-icon style="margin-right: 8px;"><Warning /></el-icon>
-    <span>网络连接异常或服务器未响应，请检查您的网络设置并重试。</span>
-    <button class="retry-btn" @click="retryConnection">重试</button>
+    <span>{{ $t('common.networkError') }}</span>
+    <button class="retry-btn" @click="retryConnection">{{ $t('common.retry') }}</button>
   </div>
   <GlobalNav v-if="showGlobalNav" />
   <PageTransition>
     <router-view />
   </PageTransition>
   <UpgradeModal />
+  <!-- Language switcher -->
+  <div class="lang-switcher">
+    <button
+      :class="['lang-btn', { active: currentLocale === 'zh-CN' }]"
+      @click="switchLocale('zh-CN')"
+    >中</button>
+    <button
+      :class="['lang-btn', { active: currentLocale === 'en-US' }]"
+      @click="switchLocale('en-US')"
+    >EN</button>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { useThemeStore } from '@/stores/theme';
 import { useUserStore } from '@/stores/user';
 import { useAppStore } from '@/stores/app';
@@ -27,6 +39,14 @@ const userStore = useUserStore();
 const appStore = useAppStore();
 const route = useRoute();
 const router = useRouter();
+const { locale } = useI18n();
+
+const currentLocale = computed(() => locale.value);
+
+function switchLocale(lang: string) {
+  locale.value = lang;
+  localStorage.setItem('locale', lang);
+}
 
 const hiddenRoutes = ['/', '/login', '/register', '/editor', '/admin'];
 
@@ -107,5 +127,39 @@ const retryConnection = () => {
 .global-network-error .retry-btn:hover {
   background: #DC2626;
   color: white;
+}
+
+/* Language Switcher */
+.lang-switcher {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9998;
+  display: flex;
+  gap: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  background: #fff;
+}
+
+.lang-btn {
+  border: none;
+  background: #fff;
+  color: #666;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.lang-btn:hover {
+  background: #f5f5f5;
+}
+
+.lang-btn.active {
+  background: #1d1d1f;
+  color: #fff;
 }
 </style>
