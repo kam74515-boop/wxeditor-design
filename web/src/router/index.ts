@@ -168,7 +168,33 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/articles/BatchEditorView.vue'),
         meta: { title: '编辑图文合集', requiresAuth: true },
       },
+      {
+        path: 'scheduled-posts',
+        name: 'ScheduledPosts',
+        component: () => import('@/views/scheduled/ScheduledPostsView.vue'),
+        meta: { title: '定时发布' },
+      },
     ],
+  },
+
+  // ========== 定时发布 ==========
+  {
+    path: '/scheduled-posts',
+    name: 'ScheduledPostsFull',
+    component: () => import('@/views/scheduled/ScheduledPostsView.vue'),
+    meta: { title: '定时发布', requiresAuth: true },
+  },
+  {
+    path: '/scheduled-posts/create',
+    name: 'ScheduledPostCreate',
+    component: () => import('@/views/scheduled/ScheduledPostCreateView.vue'),
+    meta: { title: '创建定时任务', requiresAuth: true },
+  },
+  {
+    path: '/scheduled-posts/:id/edit',
+    name: 'ScheduledPostEdit',
+    component: () => import('@/views/scheduled/ScheduledPostCreateView.vue'),
+    meta: { title: '编辑定时任务', requiresAuth: true },
   },
 
   // ========== 管理后台（嵌套路由） ==========
@@ -212,6 +238,12 @@ const routes: RouteRecordRaw[] = [
         name: 'AdminComments',
         component: () => import('@/views/admin/CommentsView.vue'),
         meta: { title: '评论管理' },
+      },
+      {
+        path: 'wechat-accounts',
+        name: 'AdminWechatAccounts',
+        component: () => import('@/views/admin/WechatAccountsView.vue'),
+        meta: { title: '公众号管理' },
       },
       {
         path: 'ai-config',

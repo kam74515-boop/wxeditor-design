@@ -99,7 +99,7 @@ import Logo from '@/components/navigation/Logo.vue';
 import {
   Document, FolderOpened, EditPen, PictureFilled, Grid,
   User, Setting, UserFilled, Star, Monitor, SwitchButton,
-  Plus, MagicStick, ChatDotRound, Notebook,
+  Plus, MagicStick, ChatDotRound, Notebook, Timer,
 } from '@element-plus/icons-vue';
 
 const route = useRoute();
@@ -136,6 +136,7 @@ const sidebarGroups = [
     label: '发布',
     items: [
       { path: '/dashboard/article-batches', label: '图文合集', icon: Notebook },
+      { path: '/scheduled-posts', label: '定时发布', icon: Timer },
     ],
   },
   {
