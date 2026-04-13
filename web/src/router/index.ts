@@ -180,6 +180,24 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/scheduled/ScheduledPostsView.vue'),
         meta: { title: '定时发布' },
       },
+      {
+        path: 'scheduled-posts/create',
+        name: 'ScheduledPostCreate',
+        component: () => import('@/views/scheduled/ScheduledPostCreateView.vue'),
+        meta: { title: '创建定时任务', requiresAuth: true },
+      },
+      {
+        path: 'scheduled-posts/:id/edit',
+        name: 'ScheduledPostEdit',
+        component: () => import('@/views/scheduled/ScheduledPostCreateView.vue'),
+        meta: { title: '编辑定时任务', requiresAuth: true },
+      },
+      {
+        path: 'wechat-accounts',
+        name: 'DashboardWechatAccounts',
+        component: () => import('@/views/wechat/WechatAccountsView.vue'),
+        meta: { title: '公众号管理', requiresAuth: true },
+      },
     ],
   },
 

@@ -129,14 +129,14 @@ const sidebarGroups = [
   {
     label: '公众号',
     items: [
-      { path: '/wechat-accounts', label: '公众号管理', icon: ChatDotRound },
+      { path: '/dashboard/wechat-accounts', label: '公众号管理', icon: ChatDotRound },
     ],
   },
   {
     label: '发布',
     items: [
       { path: '/dashboard/article-batches', label: '图文合集', icon: Notebook },
-      { path: '/scheduled-posts', label: '定时发布', icon: Timer },
+      { path: '/dashboard/scheduled-posts', label: '定时发布', icon: Timer },
     ],
   },
   {

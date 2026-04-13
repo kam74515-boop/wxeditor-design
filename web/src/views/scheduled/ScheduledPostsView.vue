@@ -1,153 +1,134 @@
 <template>
-  <div class="projects-layout">
-    <!-- 左侧品牌黄导览栏 -->
-    <aside class="sidebar-card">
-      <div class="brand">
-        <h2>定时发布</h2>
+  <div class="scheduled-posts-page">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">定时发布列表</h1>
+        <p class="page-desc">管理定时发布任务，支持定时推送图文到微信公众号</p>
       </div>
-      <nav class="nav-menu">
-        <div class="nav-item" @click="$router.push('/projects')">
-          <el-icon><FolderOpened /></el-icon> <span>全部项目</span>
-        </div>
-        <div class="nav-item active">
-          <el-icon><Timer /></el-icon> <span>定时任务</span>
-        </div>
-        <div class="nav-item" @click="$router.push('/wechat/accounts')">
-          <el-icon><Connection /></el-icon> <span>公众号管理</span>
-        </div>
-      </nav>
-      <div class="sidebar-bottom">
-        <button class="new-project-btn" @click="openCreateDialog">
-          <el-icon><Plus /></el-icon> <span>新建定时任务</span>
+      <div class="header-actions">
+        <el-select
+          v-model="filterStatus"
+          placeholder="状态筛选"
+          clearable
+          class="status-filter"
+          @change="handleFilterChange"
+        >
+          <el-option label="全部状态" value="" />
+          <el-option label="待发布" value="pending" />
+          <el-option label="发布中" value="publishing" />
+          <el-option label="已发布" value="published" />
+          <el-option label="失败" value="failed" />
+          <el-option label="已取消" value="cancelled" />
+        </el-select>
+        <el-button type="primary" @click="fetchList" :loading="loading">
+          <el-icon><Refresh /></el-icon> 刷新
+        </el-button>
+        <button class="btn-add" @click="openCreateDialog">
+          <el-icon><Plus /></el-icon>
+          新建定时任务
         </button>
       </div>
-    </aside>
+    </div>
 
-    <!-- 右侧主内容 -->
-    <main class="main-card">
-      <header class="page-header">
-        <h2 class="page-title">定时发布列表</h2>
-        <div class="header-actions">
-          <el-select
-            v-model="filterStatus"
-            placeholder="状态筛选"
-            clearable
-            class="status-filter"
-            @change="handleFilterChange"
-          >
-            <el-option label="全部状态" value="" />
-            <el-option label="待发布" value="pending" />
-            <el-option label="发布中" value="publishing" />
-            <el-option label="已发布" value="published" />
-            <el-option label="失败" value="failed" />
-            <el-option label="已取消" value="cancelled" />
-          </el-select>
-          <el-button type="primary" @click="fetchList" :loading="loading">
-            <el-icon><Refresh /></el-icon> 刷新
-          </el-button>
-        </div>
-      </header>
+    <!-- 数据表格 -->
+    <div class="table-card">
+      <el-table
+        v-loading="loading"
+        :data="posts"
+        row-key="id"
+        style="width: 100%"
+        stripe
+        empty-text="暂无定时发布任务"
+      >
+        <el-table-column label="标题" min-width="220">
+          <template #default="{ row }">
+            <div class="cell-title">
+              <span class="title-text">{{ row.title }}</span>
+              <span v-if="row.digest" class="title-digest">{{ truncate(row.digest, 40) }}</span>
+            </div>
+          </template>
+        </el-table-column>
 
-      <!-- 数据表格 -->
-      <div class="table-container">
-        <el-table
-          v-loading="loading"
-          :data="posts"
-          row-key="id"
-          style="width: 100%"
-          stripe
-          empty-text="暂无定时发布任务"
-        >
-          <el-table-column label="标题" min-width="220">
-            <template #default="{ row }">
-              <div class="cell-title">
-                <span class="title-text">{{ row.title }}</span>
-                <span v-if="row.digest" class="title-digest">{{ truncate(row.digest, 40) }}</span>
-              </div>
-            </template>
-          </el-table-column>
+        <el-table-column label="公众号" min-width="140">
+          <template #default="{ row }">
+            <span style="font-size: 13px; color: rgba(0,0,0,0.65);">{{ row.accountName || row.accountId || '-' }}</span>
+          </template>
+        </el-table-column>
 
-          <el-table-column label="公众号" min-width="140">
-            <template #default="{ row }">
-              <span style="font-size: 13px; color: rgba(0,0,0,0.65);">{{ row.accountName || row.accountId || '-' }}</span>
-            </template>
-          </el-table-column>
+        <el-table-column label="定时时间" width="180" sortable sort-by="scheduledAt">
+          <template #default="{ row }">
+            <span style="font-size: 13px; color: rgba(0,0,0,0.65);">{{ formatDate(row.scheduledAt) }}</span>
+          </template>
+        </el-table-column>
 
-          <el-table-column label="定时时间" width="180" sortable sort-by="scheduledAt">
-            <template #default="{ row }">
-              <span style="font-size: 13px; color: rgba(0,0,0,0.65);">{{ formatDate(row.scheduledAt) }}</span>
-            </template>
-          </el-table-column>
+        <el-table-column label="状态" width="120" align="center">
+          <template #default="{ row }">
+            <el-tag :type="statusTagType(row.status)" size="small" effect="light" round>
+              {{ statusLabels[row.status] || row.status }}
+            </el-tag>
+          </template>
+        </el-table-column>
 
-          <el-table-column label="状态" width="120" align="center">
-            <template #default="{ row }">
-              <el-tag :type="statusTagType(row.status)" size="small" effect="light" round>
-                {{ statusLabels[row.status] || row.status }}
-              </el-tag>
-            </template>
-          </el-table-column>
+        <el-table-column label="创建时间" width="170" sortable sort-by="createdAt">
+          <template #default="{ row }">
+            <span style="font-size: 13px; color: rgba(0,0,0,0.4);">{{ formatDate(row.createdAt) }}</span>
+          </template>
+        </el-table-column>
 
-          <el-table-column label="创建时间" width="170" sortable sort-by="createdAt">
-            <template #default="{ row }">
-              <span style="font-size: 13px; color: rgba(0,0,0,0.4);">{{ formatDate(row.createdAt) }}</span>
-            </template>
-          </el-table-column>
+        <el-table-column label="操作" width="200" fixed="right" align="center">
+          <template #default="{ row }">
+            <div class="action-btns">
+              <el-button
+                v-if="row.status === 'pending'"
+                size="small"
+                type="warning"
+                plain
+                @click="handleCancel(row)"
+              >
+                取消任务
+              </el-button>
+              <el-button
+                v-if="row.status === 'pending'"
+                size="small"
+                type="success"
+                plain
+                @click="handleExecuteNow(row)"
+              >
+                立即执行
+              </el-button>
+              <el-button
+                v-if="row.status === 'failed'"
+                size="small"
+                type="primary"
+                plain
+                @click="handleRetry(row)"
+              >
+                重试
+              </el-button>
+              <el-button
+                size="small"
+                type="danger"
+                text
+                @click="handleDelete(row)"
+              >
+                删除
+              </el-button>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
 
-          <el-table-column label="操作" width="200" fixed="right" align="center">
-            <template #default="{ row }">
-              <div class="action-btns">
-                <el-button
-                  v-if="row.status === 'pending'"
-                  size="small"
-                  type="warning"
-                  plain
-                  @click="handleCancel(row)"
-                >
-                  取消任务
-                </el-button>
-                <el-button
-                  v-if="row.status === 'pending'"
-                  size="small"
-                  type="success"
-                  plain
-                  @click="handleExecuteNow(row)"
-                >
-                  立即执行
-                </el-button>
-                <el-button
-                  v-if="row.status === 'failed'"
-                  size="small"
-                  type="primary"
-                  plain
-                  @click="handleRetry(row)"
-                >
-                  重试
-                </el-button>
-                <el-button
-                  size="small"
-                  type="danger"
-                  text
-                  @click="handleDelete(row)"
-                >
-                  删除
-                </el-button>
-              </div>
-            </template>
-          </el-table-column>
-        </el-table>
-
-        <!-- 分页 -->
-        <div v-if="total > pageSize" class="pagination">
-          <el-pagination
-            v-model:current-page="currentPage"
-            :page-size="pageSize"
-            :total="total"
-            layout="total, prev, pager, next"
-            @current-change="fetchList"
-          />
-        </div>
+      <!-- 分页 -->
+      <div v-if="total > pageSize" class="pagination">
+        <el-pagination
+          v-model:current-page="currentPage"
+          :page-size="pageSize"
+          :total="total"
+          layout="total, prev, pager, next"
+          @current-change="fetchList"
+        />
       </div>
-    </main>
+    </div>
 
     <!-- 新建定时任务对话框 -->
     <el-dialog
@@ -170,7 +151,7 @@
 import { ref, onMounted, defineAsyncComponent } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import {
-  FolderOpened, Timer, Connection, Plus, Refresh
+  Plus, Refresh
 } from '@element-plus/icons-vue';
 import { scheduledPostApi } from '@/api';
 import type { ScheduledPost } from '@/types';
@@ -337,139 +318,74 @@ onMounted(() => {
 <style lang="scss" scoped>
 @use '@/styles/variables' as *;
 
-.projects-layout {
-  display: flex;
-  height: calc(100vh - $nav-offset);
-  width: 100%;
-  background: linear-gradient(180deg, #FBFBFD 0%, #F2F2F7 100%);
-  padding: $block-gap $page-padding $page-padding;
-  gap: $block-gap;
-  box-sizing: border-box;
-  overflow: hidden;
-}
-
-/* 左侧卡片 */
-.sidebar-card {
-  width: 280px;
-  background: $brand-yellow;
-  border-radius: $block-radius-lg;
-  display: flex;
-  flex-direction: column;
-  padding: $space-lg;
-  flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
-
-  .brand {
-    margin-bottom: $space-xl;
-    h2 {
-      font-size: 1.1rem;
-      font-weight: 800;
-      color: $layout-sider-dark;
-      margin: 0;
-    }
-  }
-
-  .nav-menu {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-
-    .nav-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 16px;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: $layout-sider-dark;
-      cursor: pointer;
-      transition: all $transition-fast;
-
-      &:hover {
-        background-color: rgba(255, 255, 255, 0.4);
-      }
-
-      &.active {
-        background-color: #ffffff;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
-      }
-    }
-  }
-
-  .sidebar-bottom {
-    margin-top: auto;
-
-    .new-project-btn {
-      width: 100%;
-      padding: 12px 16px;
-      border-radius: 999px;
-      border: 1px solid rgba(0, 0, 0, 0.1);
-      background-color: #ffffff;
-      color: $layout-sider-dark;
-      font-weight: 800;
-      font-size: 0.95rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      cursor: pointer;
-      transition: all $transition-fast;
-
-      &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-      }
-    }
-  }
-}
-
-/* 右侧主内容卡片 */
-.main-card {
-  flex: 1;
-  background-color: #ffffff;
-  border-radius: $block-radius-lg;
+.scheduled-posts-page {
   padding: 24px 32px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  min-height: 100%;
+  box-sizing: border-box;
+}
 
-  .page-header {
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+
+  .page-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: $layout-sider-dark;
+    margin: 0;
+  }
+
+  .page-desc {
+    font-size: 0.85rem;
+    color: rgba(0, 0, 0, 0.45);
+    margin: 4px 0 0;
+  }
+
+  .header-actions {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: $space-xl;
+    gap: 12px;
 
-    .page-title {
-      font-size: 1.25rem;
-      font-weight: 800;
-      color: $layout-sider-dark;
-      margin: 0;
-    }
-
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-
-      .status-filter {
-        width: 160px;
-        :deep(.el-input__wrapper) {
-          background: #f6f7f8;
-          border-radius: 999px;
-          box-shadow: none;
-          padding: 2px 16px;
-        }
+    .status-filter {
+      width: 160px;
+      :deep(.el-input__wrapper) {
+        background: #f6f7f8;
+        border-radius: 999px;
+        box-shadow: none;
+        padding: 2px 16px;
       }
     }
   }
+}
 
-  .table-container {
-    flex: 1;
-    overflow-y: auto;
+.btn-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 20px;
+  border-radius: 999px;
+  border: none;
+  background-color: $brand-yellow;
+  color: $layout-sider-dark;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   }
+}
+
+.table-card {
+  background-color: #ffffff;
+  border-radius: $block-radius-lg;
+  padding: 20px 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
 }
 
 .cell-title {
