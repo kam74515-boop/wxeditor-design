@@ -72,6 +72,18 @@ const UserRepo = {
     const [{ count }] = await db('users').where({ status }).count('* as count');
     return count;
   },
+
+  /**
+   * Find user by WeChat openid stored in settings JSON field
+   * @param {string} openid
+   * @returns {Promise<object|null>}
+   */
+  async findByWechatOpenid(openid) {
+    const users = await db('users')
+      .whereRaw("JSON_EXTRACT(settings, '$.wechat.openid') = ?", [openid])
+      .limit(1);
+    return users[0] || null;
+  },
 };
 
 module.exports = UserRepo;

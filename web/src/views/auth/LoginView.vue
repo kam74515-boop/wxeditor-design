@@ -54,6 +54,18 @@
               <el-icon v-if="loading" class="is-loading"><Loading /></el-icon>
               <span v-else>登录</span>
             </button>
+
+            <div class="divider">
+              <span class="divider-text">或</span>
+            </div>
+
+            <button class="wechat-btn" type="button" @click="handleWechatLogin">
+              <svg class="wechat-icon" viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
+                <path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 01.213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.295.295a.326.326 0 00.167-.054l1.903-1.114a.864.864 0 01.717-.098 10.16 10.16 0 002.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 01-1.162 1.178A1.17 1.17 0 014.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 01-1.162 1.178 1.17 1.17 0 01-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229.826 0 1.622-.12 2.361-.336a.722.722 0 01.598.082l1.584.926a.272.272 0 00.14.045c.136 0 .246-.108.246-.245 0-.06-.024-.12-.04-.178l-.325-1.233a.492.492 0 01.177-.554C23.025 18.265 24 16.573 24 14.71c0-3.38-3.125-5.852-7.062-5.852zm-2.89 2.76c.535 0 .969.44.969.983a.976.976 0 01-.969.983.976.976 0 01-.969-.983c0-.542.434-.983.97-.983zm4.844 0c.535 0 .969.44.969.983a.976.976 0 01-.969.983.976.976 0 01-.969-.983c0-.542.434-.983.97-.983z"/>
+              </svg>
+              <span>微信扫码登录</span>
+            </button>
+
             <div class="switch-link">
               还没有账号？ <router-link to="/register">立即注册</router-link>
             </div>
@@ -80,6 +92,22 @@ const usernameError = ref('');
 const passwordError = ref('');
 const generalError = ref('');
 const loading = ref(false);
+
+async function handleWechatLogin() {
+  try {
+    const res: any = await http.get('/auth/wechat/url');
+    const data = res?.data || res;
+    const url = data?.url;
+    if (url) {
+      window.location.href = url;
+    } else {
+      generalError.value = '获取微信授权链接失败';
+    }
+  } catch (err: any) {
+    const msg = err?.response?.data?.message || err?.message || '获取微信授权链接失败';
+    generalError.value = msg;
+  }
+}
 
 async function handleSubmit() {
   usernameError.value = '';
@@ -283,7 +311,7 @@ async function handleSubmit() {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
+  gap: 16px;
   
   .submit-btn {
     width: 100%;
@@ -308,6 +336,59 @@ async function handleSubmit() {
     &:disabled {
       opacity: 0.7;
       cursor: not-allowed;
+    }
+  }
+  
+  .divider {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 4px 0;
+    
+    &::before,
+    &::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #e5e7eb;
+    }
+    
+    .divider-text {
+      font-size: 0.85rem;
+      color: rgba(0, 0, 0, 0.35);
+      white-space: nowrap;
+    }
+  }
+  
+  .wechat-btn {
+    width: 100%;
+    height: 48px;
+    background: #07C160;
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    
+    .wechat-icon {
+      flex-shrink: 0;
+    }
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(7, 193, 96, 0.3);
+      background: #06ad56;
+    }
+    
+    &:active {
+      transform: translateY(0);
     }
   }
   

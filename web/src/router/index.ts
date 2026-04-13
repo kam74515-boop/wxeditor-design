@@ -24,6 +24,12 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/auth/RegisterView.vue'),
     meta: { title: '注册', requiresAuth: false, guestOnly: true },
   },
+  {
+    path: '/auth/wechat/callback',
+    name: 'WechatCallback',
+    component: () => import('@/views/auth/WechatCallbackView.vue'),
+    meta: { title: '微信登录', requiresAuth: false, guestOnly: true },
+  },
 
   // ========== 仪表盘布局包裹的路由 ==========
   {
