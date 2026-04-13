@@ -35,6 +35,8 @@ const upload = multer({
   },
 });
 
+// ─── Specific routes FIRST (before /:id) ─────────────────
+
 router.get('/', auth, async (req, res) => {
   try {
     const { page = 1, limit = 30, type = '', folderId = '', search = '' } = req.query;
@@ -63,42 +65,7 @@ router.post('/upload-batch', auth, upload.array('files', 20), async (req, res) =
   }
 });
 
-router.get('/:id', auth, async (req, res) => {
-  try {
-    const material = await MaterialService.getMaterial(req.params.id, req.user);
-    res.json({ success: true, data: material });
-  } catch (err) {
-    res.status(err.statusCode || 500).json({ success: false, message: err.message });
-  }
-});
-
-router.delete('/:id', auth, async (req, res) => {
-  try {
-    await MaterialService.deleteMaterial(req.params.id, req.user);
-    res.json({ success: true, message: '素材已删除' });
-  } catch (err) {
-    res.status(err.statusCode || 500).json({ success: false, message: err.message });
-  }
-});
-
-router.delete('/batch', auth, async (req, res) => {
-  try {
-    const count = await MaterialService.batchDelete(req.body.ids, req.user);
-    res.json({ success: true, message: `已删除 ${count} 个素材` });
-  } catch (err) {
-    res.status(err.statusCode || 500).json({ success: false, message: err.message });
-  }
-});
-
-router.put('/:id/folder', auth, async (req, res) => {
-  try {
-    await MaterialService.moveToFolder(req.params.id, req.body.folderId, req.user);
-    res.json({ success: true, message: '素材已移动' });
-  } catch (err) {
-    res.status(err.statusCode || 500).json({ success: false, message: err.message });
-  }
-});
-
+// Specific sub-routes (must come before /:id to avoid being swallowed)
 router.get('/stats/usage', auth, async (req, res) => {
   try {
     const stats = await MaterialService.getStats(req.user);
@@ -130,6 +97,44 @@ router.delete('/folders/:id', auth, async (req, res) => {
   try {
     await MaterialService.deleteFolder(req.params.id, req.user);
     res.json({ success: true, message: '文件夹已删除' });
+  } catch (err) {
+    res.status(err.statusCode || 500).json({ success: false, message: err.message });
+  }
+});
+
+router.delete('/batch', auth, async (req, res) => {
+  try {
+    const count = await MaterialService.batchDelete(req.body.ids, req.user);
+    res.json({ success: true, message: `已删除 ${count} 个素材` });
+  } catch (err) {
+    res.status(err.statusCode || 500).json({ success: false, message: err.message });
+  }
+});
+
+// ─── Parametric routes LAST ───────────────────────────────
+
+router.get('/:id', auth, async (req, res) => {
+  try {
+    const material = await MaterialService.getMaterial(req.params.id, req.user);
+    res.json({ success: true, data: material });
+  } catch (err) {
+    res.status(err.statusCode || 500).json({ success: false, message: err.message });
+  }
+});
+
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    await MaterialService.deleteMaterial(req.params.id, req.user);
+    res.json({ success: true, message: '素材已删除' });
+  } catch (err) {
+    res.status(err.statusCode || 500).json({ success: false, message: err.message });
+  }
+});
+
+router.put('/:id/folder', auth, async (req, res) => {
+  try {
+    await MaterialService.moveToFolder(req.params.id, req.body.folderId, req.user);
+    res.json({ success: true, message: '素材已移动' });
   } catch (err) {
     res.status(err.statusCode || 500).json({ success: false, message: err.message });
   }

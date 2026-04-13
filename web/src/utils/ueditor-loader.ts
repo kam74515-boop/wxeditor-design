@@ -100,14 +100,15 @@ export async function initUEditor(
     // 保留完整原生工具栏，通过 CSS 魔改 UI
     toolbars: [
       [
-        'formatmatch', 'removeformat',
-        'paragraph', 'fontsize',
-        'bold', 'italic', 'underline', 'strikethrough',
-        'forecolor', 'backcolor',
-        'insertorderedlist', 'insertunorderedlist',
-        'link', 'unlink',
-        'horizontal', 'inserttable', 'insertimage',
-        'blockquote', 'source'
+        'source', '|',
+        'bold', 'italic', 'underline', 'strikethrough', '|',
+        'paragraph', 'fontsize', '|',
+        'forecolor', 'backcolor', '|',
+        'insertorderedlist', 'insertunorderedlist', 'blockquote', '|',
+        'insertcode', '|',
+        'link', 'unlink', '|',
+        'insertimage', 'horizontal', 'inserttable', '|',
+        'formatmatch', 'removeformat'
       ]
     ],
     // 隐藏底部元素路径和字数

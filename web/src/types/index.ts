@@ -154,6 +154,26 @@ export interface Template {
   createdAt: string;
 }
 
+// 定时发布类型
+export interface ScheduledPost {
+  id: string;
+  accountId: string;
+  accountName?: string;
+  documentId?: string;
+  documentTitle?: string;
+  title: string;
+  content?: string;
+  scheduledAt: string;
+  status: 'pending' | 'publishing' | 'published' | 'failed' | 'cancelled';
+  errorMsg?: string;
+  mediaId?: string;
+  thumbMediaId?: string;
+  digest?: string;
+  coverUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // 聊天消息类型
 export interface ChatMessage {
   id: string;

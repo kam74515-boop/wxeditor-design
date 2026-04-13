@@ -74,7 +74,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/materials',
     name: 'Materials',
-    component: () => import('@/views/TemplatesView.vue'), // reuse templates view as placeholder
+    component: () => import('@/views/MaterialsView.vue'),
     meta: { title: '素材库', requiresAuth: true },
   },
 
@@ -100,6 +100,14 @@ const routes: RouteRecordRaw[] = [
     name: 'Settings',
     component: () => import('@/views/ProfileView.vue'),
     meta: { title: '设置', requiresAuth: true },
+  },
+
+  // ========== 微信公众号管理 ==========
+  {
+    path: '/wechat-accounts',
+    name: 'WechatAccounts',
+    component: () => import('@/views/wechat/WechatAccountsView.vue'),
+    meta: { title: '我的公众号', requiresAuth: true },
   },
 
   // ========== 团队 ==========
@@ -142,6 +150,27 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '结算', requiresAuth: true },
   },
 
+  // ========== 图文合集（仪表盘子路由） ==========
+  {
+    path: '/dashboard',
+    component: () => import('@/layouts/DashboardLayout.vue'),
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: 'article-batches',
+        name: 'ArticleBatches',
+        component: () => import('@/views/articles/BatchListView.vue'),
+        meta: { title: '图文合集', requiresAuth: true },
+      },
+      {
+        path: 'article-batches/:id',
+        name: 'BatchEditor',
+        component: () => import('@/views/articles/BatchEditorView.vue'),
+        meta: { title: '编辑图文合集', requiresAuth: true },
+      },
+    ],
+  },
+
   // ========== 管理后台（嵌套路由） ==========
   {
     path: '/admin',
@@ -177,6 +206,12 @@ const routes: RouteRecordRaw[] = [
         name: 'AdminContent',
         component: () => import('@/views/admin/ContentReviewView.vue'),
         meta: { title: '内容审核' },
+      },
+      {
+        path: 'comments',
+        name: 'AdminComments',
+        component: () => import('@/views/admin/CommentsView.vue'),
+        meta: { title: '评论管理' },
       },
       {
         path: 'ai-config',

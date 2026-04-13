@@ -1,5 +1,5 @@
 import http from '@/utils/http';
-import type { ApiResponse, Project, Article, UploadResult, User, Template, Team } from '@/types';
+import type { ApiResponse, Project, Article, UploadResult, User, Template, Team, ScheduledPost } from '@/types';
 
 // ==================== Auth APIs ====================
 export const authApi = {
@@ -328,6 +328,40 @@ export const adminApi = {
     http.put<ApiResponse<null>>('/admin/settings', data),
 };
 
+// ==================== Wechat Account APIs ====================
+export const wechatAccountApi = {
+  getList: () =>
+    http.get<ApiResponse<{ list: any[] }>>('/wechat-accounts'),
+
+  getDetail: (id: string) =>
+    http.get<ApiResponse<any>>(`/wechat-accounts/${id}`),
+
+  create: (data: {
+    name: string;
+    wechatId?: string;
+    type?: string;
+    appId: string;
+    appSecret: string;
+    token?: string;
+    encodingAesKey?: string;
+    avatar?: string;
+    isDefault?: boolean;
+  }) =>
+    http.post<ApiResponse<any>>('/wechat-accounts', data),
+
+  update: (id: string, data: Record<string, any>) =>
+    http.put<ApiResponse<any>>(`/wechat-accounts/${id}`, data),
+
+  delete: (id: string) =>
+    http.delete<ApiResponse<null>>(`/wechat-accounts/${id}`),
+
+  sync: (id: string) =>
+    http.post<ApiResponse<any>>(`/wechat-accounts/${id}/sync`),
+
+  testConnection: (id: string) =>
+    http.post<ApiResponse<any>>(`/wechat-accounts/${id}/test`),
+};
+
 // ==================== Settings APIs ====================
 export const settingsApi = {
   getSettings: () =>
@@ -341,4 +375,69 @@ export const settingsApi = {
 
   updateNotificationPreferences: (data: any) =>
     http.put<ApiResponse<null>>('/settings/notifications', data),
+};
+
+// ==================== Scheduled Post APIs ====================
+export const scheduledPostApi = {
+  getList: (params?: { page?: number; limit?: number; status?: string }) =>
+    http.get<ApiResponse<{ list: ScheduledPost[]; total: number }>>('/scheduled-posts', { params }),
+
+  getDetail: (id: string) =>
+    http.get<ApiResponse<ScheduledPost>>(`/scheduled-posts/${id}`),
+
+  create: (data: {
+    accountId: string;
+    documentId?: string;
+    title: string;
+    content?: string;
+    scheduledAt: string;
+    digest?: string;
+    coverUrl?: string;
+    thumbMediaId?: string;
+  }) => http.post<ApiResponse<ScheduledPost>>('/scheduled-posts', data),
+
+  update: (id: string, data: Partial<ScheduledPost>) =>
+    http.put<ApiResponse<ScheduledPost>>(`/scheduled-posts/${id}`, data),
+
+  delete: (id: string) =>
+    http.delete<ApiResponse<null>>(`/scheduled-posts/${id}`),
+
+  cancel: (id: string) =>
+    http.post<ApiResponse<null>>(`/scheduled-posts/${id}/cancel`),
+};
+
+// ==================== Comment APIs ====================
+export const commentApi = {
+  getByDocument: (docId: string) =>
+    http.get<ApiResponse<any[]>>(`/comments/document/${docId}`),
+  create: (data: { document_id: string; content: string; parent_id?: number }) =>
+    http.post<ApiResponse<any>>('/comments', data),
+  update: (id: number, data: { content?: string; status?: string }) =>
+    http.put<ApiResponse<any>>(`/comments/${id}`, data),
+  delete: (id: number) =>
+    http.delete<ApiResponse<null>>(`/comments/${id}`),
+};
+
+// ==================== Article Batch APIs ====================
+export const articleBatchApi = {
+  getList: (params?: { page?: number; limit?: number; status?: string }) =>
+    http.get<ApiResponse<{ list: any[]; total: number }>>('/article-batches', { params }),
+  getDetail: (id: string) =>
+    http.get<ApiResponse<any>>(`/article-batches/${id}`),
+  create: (data: { title: string; account_id?: number; articles?: any[] }) =>
+    http.post<ApiResponse<any>>('/article-batches', data),
+  update: (id: string, data: { title?: string; status?: string; account_id?: number }) =>
+    http.put<ApiResponse<any>>(`/article-batches/${id}`, data),
+  delete: (id: string) =>
+    http.delete<ApiResponse<null>>(`/article-batches/${id}`),
+  addArticle: (batchId: string, data: { title: string; content?: string; cover_image?: string; digest?: string; author?: string }) =>
+    http.post<ApiResponse<any>>(`/article-batches/${batchId}/articles`, data),
+  updateArticle: (batchId: string, articleId: string, data: any) =>
+    http.put<ApiResponse<any>>(`/article-batches/${batchId}/articles/${articleId}`, data),
+  deleteArticle: (batchId: string, articleId: string) =>
+    http.delete<ApiResponse<null>>(`/article-batches/${batchId}/articles/${articleId}`),
+  reorder: (batchId: string, orderedIds: number[]) =>
+    http.put<ApiResponse<any>>(`/article-batches/${batchId}/reorder`, { orderedIds }),
+  publish: (id: string) =>
+    http.post<ApiResponse<any>>(`/article-batches/${id}/publish`),
 };

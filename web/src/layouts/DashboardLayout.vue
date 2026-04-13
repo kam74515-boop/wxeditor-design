@@ -99,7 +99,7 @@ import Logo from '@/components/navigation/Logo.vue';
 import {
   Document, FolderOpened, EditPen, PictureFilled, Grid,
   User, Setting, UserFilled, Star, Monitor, SwitchButton,
-  Plus, MagicStick,
+  Plus, MagicStick, ChatDotRound, Notebook,
 } from '@element-plus/icons-vue';
 
 const route = useRoute();
@@ -124,6 +124,18 @@ const sidebarGroups = [
     items: [
       { path: '/projects', label: '文档管理', icon: FolderOpened },
       { path: '/ai-writing', label: 'AI 写作', icon: MagicStick },
+    ],
+  },
+  {
+    label: '公众号',
+    items: [
+      { path: '/wechat-accounts', label: '公众号管理', icon: ChatDotRound },
+    ],
+  },
+  {
+    label: '发布',
+    items: [
+      { path: '/dashboard/article-batches', label: '图文合集', icon: Notebook },
     ],
   },
   {

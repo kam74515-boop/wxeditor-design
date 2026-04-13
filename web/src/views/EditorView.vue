@@ -161,6 +161,9 @@
           <button class="action-icon-btn" title="新建对话" @click="handleNewChat">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           </button>
+          <button class="action-icon-btn" :class="{ active: showCommentPanel }" title="评论批注" @click="showCommentPanel = !showCommentPanel">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          </button>
           <button class="action-btn primary-btn" @click="() => {}"><el-icon><Position /></el-icon> 导出 / 发布</button>
         </div>
       </div>
@@ -294,6 +297,13 @@
         </button>
       </div>
     </aside>
+
+    <!-- 评论批注面板 -->
+    <CommentPanel
+      :visible="showCommentPanel"
+      :document-id="commentDocumentId"
+      @close="showCommentPanel = false"
+    />
   </div>
 </template>
 
@@ -313,6 +323,7 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import 'vue-cropper/dist/index.css';
 import { VueCropper } from 'vue-cropper';
 import BackButton from '@/components/navigation/BackButton.vue';
+import CommentPanel from '@/components/editor/CommentPanel.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -534,6 +545,8 @@ function deleteChatHistory(idx: number) {
 
 const activeTab = ref('templates');
 const previewMode = ref<'desktop' | 'mobile'>('desktop');
+const showCommentPanel = ref(false);
+const commentDocumentId = computed(() => (route.params.documentId as string) || currentProject.value?.id || '');
 const tabColors: Record<string, string> = {
   templates: '#BAE6FD',
   svg: '#DDD6FE',

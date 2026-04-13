@@ -28,4 +28,16 @@ module.exports = function registerRoutes(app) {
 
   // UEditor 上传（无认证 —— 需前端配合鉴权）
   app.use('/api/ueditor', require('../controllers/ueditor.ctrl'));
+
+  // 多公众号管理
+  app.use('/api/wechat-accounts', auth, require('../controllers/wechatAccount.ctrl'));
+
+  // 定时发布
+  app.use('/api/scheduled-posts', auth, require('../controllers/scheduledPost.ctrl'));
+
+  // 评论批注
+  app.use('/api/comments', require('../controllers/comment.ctrl'));
+
+  // 图文消息多篇文章
+  app.use('/api/article-batches', auth, require('../controllers/articleBatch.ctrl'));
 };
