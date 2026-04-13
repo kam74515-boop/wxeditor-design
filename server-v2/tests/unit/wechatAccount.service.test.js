@@ -15,6 +15,11 @@ const WechatAccountRepo = require('../../src/repositories/wechatAccount.repo');
 const WechatAccountService = require('../../src/services/wechatAccount.service');
 
 jest.mock('../../src/repositories/wechatAccount.repo');
+jest.mock('../../src/services/wechatProxy.service', () => ({
+  getAccessToken: jest.fn().mockResolvedValue('mock_access_token_1234567890'),
+  get: jest.fn().mockResolvedValue({ ip_list: ['127.0.0.1'] }),
+  clearTokenCache: jest.fn(),
+}));
 jest.mock('crypto', () => ({
   randomBytes: jest.fn(() => Buffer.from('abcdef0123456789abcdef0123456789', 'hex')),
 }));
@@ -134,8 +139,9 @@ describe('WechatAccountService', () => {
     });
 
     it('should allow updating status and app credentials', async () => {
-      WechatAccountRepo.findById.mockResolvedValue({ id: 1, user_id: 1 });
+      WechatAccountRepo.findById.mockResolvedValue({ id: 1, user_id: 1, app_id: 'old_id' });
       WechatAccountRepo.update.mockResolvedValue({ id: 1 });
+      const WechatProxyService = require('../../src/services/wechatProxy.service');
 
       await WechatAccountService.update(user, 1, {
         status: 'inactive',
@@ -147,7 +153,9 @@ describe('WechatAccountService', () => {
         status: 'inactive',
         app_id: 'new_id',
         app_secret: 'new_secret',
+        verified: false,
       });
+      expect(WechatProxyService.clearTokenCache).toHaveBeenCalledWith('new_id');
     });
 
     it('should throw 404 if account not found', async () => {
@@ -214,7 +222,7 @@ describe('WechatAccountService', () => {
   // ── verify ──────────────────────────────────────────────
   describe('verify', () => {
     it('should verify an account successfully', async () => {
-      WechatAccountRepo.findById.mockResolvedValue({ id: 1, user_id: 1 });
+      WechatAccountRepo.findById.mockResolvedValue({ id: 1, user_id: 1, app_id: 'wx123', app_secret: 'secret' });
       WechatAccountRepo.update.mockResolvedValue({ id: 1 });
 
       const result = await WechatAccountService.verify(user, 1);
@@ -226,10 +234,8 @@ describe('WechatAccountService', () => {
         token_info: expect.any(String),
       });
 
-      // Verify the token_info is valid JSON
       const tokenInfo = JSON.parse(WechatAccountRepo.update.mock.calls[0][1].token_info);
-      expect(tokenInfo.access_token).toMatch(/^verified_/);
-      expect(tokenInfo.expires_in).toBe(7200);
+      expect(tokenInfo.access_token_preview).toMatch(/^mock_acce/);
       expect(tokenInfo.verified_at).toBeDefined();
     });
 
@@ -250,17 +256,15 @@ describe('WechatAccountService', () => {
     });
 
     it('should handle verification failure gracefully', async () => {
-      WechatAccountRepo.findById.mockResolvedValue({ id: 1, user_id: 1 });
-      // First update (verify) throws
-      WechatAccountRepo.update.mockRejectedValueOnce(new Error('Network error'));
-      // Second update (failure record)
-      WechatAccountRepo.update.mockResolvedValueOnce({ id: 1 });
+      WechatAccountRepo.findById.mockResolvedValue({ id: 1, user_id: 1, app_id: 'wx123', app_secret: 'secret' });
+      WechatAccountRepo.update.mockResolvedValue({ id: 1 });
+      const WechatProxyService = require('../../src/services/wechatProxy.service');
+      WechatProxyService.getAccessToken.mockRejectedValueOnce(new Error('Network error'));
 
       await expect(
         WechatAccountService.verify(user, 1)
       ).rejects.toMatchObject({ statusCode: 400, message: expect.stringContaining('公众号验证失败') });
 
-      // Second call records failure
       expect(WechatAccountRepo.update).toHaveBeenCalledTimes(2);
       expect(WechatAccountRepo.update).toHaveBeenNthCalledWith(2, 1, {
         verified: false,
@@ -269,7 +273,7 @@ describe('WechatAccountService', () => {
     });
 
     it('should allow admin to verify any account', async () => {
-      WechatAccountRepo.findById.mockResolvedValue({ id: 1, user_id: 99 });
+      WechatAccountRepo.findById.mockResolvedValue({ id: 1, user_id: 99, app_id: 'wx123', app_secret: 'secret' });
       WechatAccountRepo.update.mockResolvedValue({ id: 1 });
 
       const result = await WechatAccountService.verify(adminUser, 1);

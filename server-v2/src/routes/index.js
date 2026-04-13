@@ -5,6 +5,7 @@ module.exports = function registerRoutes(app) {
   app.use('/api/auth', require('../controllers/auth.ctrl'));
   app.use('/api/content', require('../controllers/content.ctrl'));
   app.use('/api/templates', require('../controllers/template.ctrl'));
+  // 微信公众号 API 代理（wechat.ctrl 内部自行做 auth + wechatAuth）
   app.use('/api/wechat', require('../controllers/wechat.ctrl'));
   app.use('/api/drafts', require('../controllers/draft.ctrl'));
 

@@ -4,7 +4,7 @@
     <div class="page-header">
       <div>
         <h1 class="page-title">我的公众号</h1>
-        <p class="page-desc">管理已绑定的微信公众号，共 {{ accounts.length }} 个</p>
+        <p class="page-desc">管理已绑定的微信公众号，共 {{ wechatStore.accounts.length }} 个</p>
       </div>
       <button class="btn-add" @click="openAddDialog">
         <el-icon><Plus /></el-icon>
@@ -13,9 +13,9 @@
     </div>
 
     <!-- 公众号卡片列表 -->
-    <div v-loading="loading" class="accounts-grid">
+    <div v-loading="wechatStore.loading" class="accounts-grid">
       <div
-        v-for="account in accounts"
+        v-for="account in wechatStore.accounts"
         :key="account.id"
         class="account-card"
       >
@@ -31,6 +31,14 @@
             </span>
             <span v-if="account.isDefault" class="default-tag">默认</span>
           </div>
+        </div>
+
+        <!-- 连接状态实时显示 -->
+        <div v-if="account.verifyStatus && account.verifyStatus !== 'idle'" class="verify-bar" :class="`verify-bar--${account.verifyStatus}`">
+          <el-icon v-if="account.verifyStatus === 'verifying'" class="is-loading"><Loading /></el-icon>
+          <el-icon v-else-if="account.verifyStatus === 'success'"><CircleCheck /></el-icon>
+          <el-icon v-else><CircleClose /></el-icon>
+          <span>{{ account.verifyMessage }}</span>
         </div>
 
         <!-- 卡片主体 -->
@@ -49,12 +57,30 @@
               <span>· 同步: {{ formatDate(account.lastSyncedAt) }}</span>
             </template>
           </p>
+
+          <!-- API 调用量统计 -->
+          <div v-if="account.apiUsage" class="api-usage-bar">
+            <div class="api-usage-bar__label">
+              <span>API 用量</span>
+              <span class="api-usage-bar__count">{{ account.apiUsage.remainingCalls }} / {{ account.apiUsage.totalCalls }}</span>
+            </div>
+            <div class="api-usage-bar__track">
+              <div
+                class="api-usage-bar__fill"
+                :style="{ width: usagePercent(account) + '%' }"
+                :class="{ 'api-usage-bar__fill--low': usagePercent(account) < 20 }"
+              />
+            </div>
+          </div>
         </div>
 
         <!-- 卡片操作 -->
         <div class="account-card__actions">
-          <el-button size="small" text @click="syncAccount(account)" :loading="syncingId === account.id">
+          <el-button size="small" text @click="handleSync(account)" :loading="syncingId === account.id">
             同步
+          </el-button>
+          <el-button size="small" text @click="handleVerify(account)" :loading="wechatStore.verifyLoadingMap[account.id]">
+            验证
           </el-button>
           <el-button v-if="!account.isDefault" size="small" text @click="setDefault(account)">
             设为默认
@@ -75,7 +101,7 @@
       </div>
 
       <!-- 空状态 -->
-      <div v-if="!loading && accounts.length === 0" class="empty-state">
+      <div v-if="!wechatStore.loading && wechatStore.accounts.length === 0" class="empty-state">
         <el-icon :size="48" color="rgba(0,0,0,0.15)"><ChatDotRound /></el-icon>
         <p class="empty-state__title">暂无绑定的公众号</p>
         <p class="empty-state__desc">点击右上角「添加公众号」开始绑定</p>
@@ -139,24 +165,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Plus, ChatDotRound } from '@element-plus/icons-vue';
-import { wechatAccountApi } from '@/api';
+import { Plus, ChatDotRound, Loading, CircleCheck, CircleClose } from '@element-plus/icons-vue';
+import { useWechatStore } from '@/stores/wechat';
+import type { WechatAccount } from '@/stores/wechat';
 
-interface WechatAccount {
-  id: string;
-  name: string;
-  wechatId: string;
-  type: string;
-  appId: string;
-  appSecret: string;
-  token: string;
-  encodingAesKey: string;
-  avatar: string;
-  status: string;
-  isDefault: boolean;
-  lastSyncedAt: string;
-  createdAt: string;
-}
+const wechatStore = useWechatStore();
 
 const statusLabels: Record<string, string> = {
   active: '已连接',
@@ -172,10 +185,8 @@ const typeLabels: Record<string, string> = {
   miniapp: '小程序',
 };
 
-const loading = ref(false);
 const saving = ref(false);
 const syncingId = ref('');
-const accounts = ref<WechatAccount[]>([]);
 
 const showDialog = ref(false);
 const editingAccount = ref<WechatAccount | null>(null);
@@ -192,68 +203,14 @@ const form = ref({
 });
 
 onMounted(() => {
-  fetchAccounts();
+  wechatStore.fetchAccounts();
 });
 
-async function fetchAccounts() {
-  loading.value = true;
-  try {
-    const res: any = await wechatAccountApi.getList();
-    if (res.success) {
-      accounts.value = res.data.list || res.data;
-    }
-  } catch {
-    // Mock fallback
-    accounts.value = [
-      {
-        id: '1',
-        name: '科技前沿资讯',
-        wechatId: 'tech_frontier',
-        type: 'subscription',
-        appId: 'wx1234567890abcdef',
-        appSecret: '',
-        token: '',
-        encodingAesKey: '',
-        avatar: '',
-        status: 'active',
-        isDefault: true,
-        lastSyncedAt: new Date(Date.now() - 3600000).toISOString(),
-        createdAt: '2026-01-15T10:00:00Z',
-      },
-      {
-        id: '2',
-        name: '产品发布助手',
-        wechatId: 'product_helper',
-        type: 'service',
-        appId: 'wxabcdef1234567890',
-        appSecret: '',
-        token: '',
-        encodingAesKey: '',
-        avatar: '',
-        status: 'active',
-        isDefault: false,
-        lastSyncedAt: new Date(Date.now() - 7200000).toISOString(),
-        createdAt: '2026-02-20T08:30:00Z',
-      },
-      {
-        id: '3',
-        name: '测试公众号',
-        wechatId: 'test_account',
-        type: 'subscription',
-        appId: 'wx9999999999999999',
-        appSecret: '',
-        token: '',
-        encodingAesKey: '',
-        avatar: '',
-        status: 'error',
-        isDefault: false,
-        lastSyncedAt: '',
-        createdAt: '2026-03-01T14:20:00Z',
-      },
-    ];
-  } finally {
-    loading.value = false;
-  }
+function usagePercent(account: WechatAccount): number {
+  if (!account.apiUsage) return 0;
+  const { totalCalls, remainingCalls } = account.apiUsage;
+  if (totalCalls <= 0) return 0;
+  return Math.round((remainingCalls / totalCalls) * 100);
 }
 
 function openAddDialog() {
@@ -301,15 +258,14 @@ async function saveAccount() {
   saving.value = true;
   try {
     if (editingAccount.value) {
-      await wechatAccountApi.update(editingAccount.value.id, form.value);
+      await wechatStore.updateAccount(editingAccount.value.id, form.value);
       ElMessage.success('公众号已更新');
     } else {
-      await wechatAccountApi.create(form.value);
+      await wechatStore.addAccount(form.value);
       ElMessage.success('公众号已添加');
     }
     showDialog.value = false;
     resetForm();
-    fetchAccounts();
   } catch {
     ElMessage.error('操作失败');
   } finally {
@@ -317,12 +273,11 @@ async function saveAccount() {
   }
 }
 
-async function syncAccount(account: WechatAccount) {
+async function handleSync(account: WechatAccount) {
   syncingId.value = account.id;
   try {
-    await wechatAccountApi.sync(account.id);
+    await wechatStore.syncAccount(account.id);
     ElMessage.success('同步成功');
-    fetchAccounts();
   } catch {
     ElMessage.error('同步失败，请检查配置');
   } finally {
@@ -330,11 +285,19 @@ async function syncAccount(account: WechatAccount) {
   }
 }
 
+async function handleVerify(account: WechatAccount) {
+  try {
+    await wechatStore.verifyAccount(account.id);
+    ElMessage.success('连接验证成功');
+  } catch {
+    ElMessage.error('连接验证失败');
+  }
+}
+
 async function setDefault(account: WechatAccount) {
   try {
-    await wechatAccountApi.update(account.id, { isDefault: true });
+    await wechatStore.updateAccount(account.id, { isDefault: true });
     ElMessage.success('已设为默认公众号');
-    fetchAccounts();
   } catch {
     ElMessage.error('操作失败');
   }
@@ -342,7 +305,7 @@ async function setDefault(account: WechatAccount) {
 
 function handleAction(cmd: string, account: WechatAccount) {
   if (cmd === 'test') {
-    testConnection(account);
+    handleVerify(account);
   } else if (cmd === 'disable' || cmd === 'enable') {
     toggleStatus(account, cmd === 'enable');
   } else if (cmd === 'unbind') {
@@ -350,22 +313,10 @@ function handleAction(cmd: string, account: WechatAccount) {
   }
 }
 
-async function testConnection(account: WechatAccount) {
-  try {
-    const res: any = await wechatAccountApi.testConnection(account.id);
-    if (res.success) {
-      ElMessage.success('连接测试成功');
-    }
-  } catch {
-    ElMessage.error('连接测试失败');
-  }
-}
-
 async function toggleStatus(account: WechatAccount, enable: boolean) {
   try {
-    await wechatAccountApi.update(account.id, { status: enable ? 'active' : 'disabled' });
+    await wechatStore.updateAccount(account.id, { status: enable ? 'active' : 'disabled' });
     ElMessage.success(enable ? '已启用' : '已停用');
-    fetchAccounts();
   } catch {
     ElMessage.error('操作失败');
   }
@@ -378,9 +329,8 @@ async function unbindAccount(account: WechatAccount) {
       '确认解绑',
       { type: 'warning' },
     );
-    await wechatAccountApi.delete(account.id);
+    await wechatStore.removeAccount(account.id);
     ElMessage.success('公众号已解绑');
-    fetchAccounts();
   } catch {
     /* 取消 */
   }
@@ -392,7 +342,7 @@ function formatDate(dateStr: string) {
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .wechat-accounts-page {
   padding: 0;
 }
@@ -527,6 +477,32 @@ function formatDate(dateStr: string) {
   color: #1d1d1f;
 }
 
+/* ---- Verify bar ---- */
+.verify-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.verify-bar--verifying {
+  background: #eff6ff;
+  color: #3b82f6;
+}
+
+.verify-bar--success {
+  background: #ecfdf5;
+  color: #10b981;
+}
+
+.verify-bar--error {
+  background: #fef2f2;
+  color: #ef4444;
+}
+
 /* ---- Body ---- */
 .account-card__body {
   flex: 1;
@@ -550,6 +526,44 @@ function formatDate(dateStr: string) {
 .meta--sub {
   color: rgba(0, 0, 0, 0.3);
   margin-top: 4px;
+}
+
+/* ---- API usage bar ---- */
+.api-usage-bar {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.api-usage-bar__label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.4);
+  margin-bottom: 4px;
+}
+
+.api-usage-bar__count {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.api-usage-bar__track {
+  height: 4px;
+  border-radius: 2px;
+  background: #f0f0f0;
+  overflow: hidden;
+}
+
+.api-usage-bar__fill {
+  height: 100%;
+  border-radius: 2px;
+  background: #10b981;
+  transition: width 0.3s ease;
+}
+
+.api-usage-bar__fill--low {
+  background: #ef4444;
 }
 
 /* ---- Actions ---- */

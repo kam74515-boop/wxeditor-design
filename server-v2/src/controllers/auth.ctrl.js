@@ -133,4 +133,75 @@ router.get('/wechat/callback', async (req, res) => {
   }
 });
 
+// ========== MP (公众号) Web-page OAuth Routes ==========
+
+/**
+ * GET /api/auth/wechat/mp-url
+ * Generate MP (公众号) web-page authorization URL.
+ * Used when the user opens the app inside the WeChat MP browser.
+ *
+ * Query params:
+ *   scope        - 'snsapi_base' | 'snsapi_userinfo' (default: snsapi_userinfo)
+ *   appId        - override MP appId (optional, defaults to env WECHAT_MP_APPID)
+ *   redirectUri  - override redirect URI (optional, defaults to env WECHAT_MP_REDIRECT_URI)
+ *   state        - custom state (optional)
+ */
+router.get('/wechat/mp-url', (req, res) => {
+  try {
+    const { scope, appId, redirectUri, state } = req.query;
+    const url = WechatOAuthService.getMpAuthUrl({
+      scope: scope || 'snsapi_userinfo',
+      appId: appId || undefined,
+      redirectUri: redirectUri || undefined,
+      state: state || undefined,
+    });
+    const generatedState = url.match(/state=([^&]+)/)?.[1] || '';
+    res.json({ success: true, data: { url, state: generatedState } });
+  } catch (err) {
+    res.status(err.statusCode || 500).json({
+      success: false,
+      message: err.message || '生成公众号授权链接失败',
+    });
+  }
+});
+
+/**
+ * GET /api/auth/wechat/mp-callback
+ * Handle MP web-page authorization callback.
+ * Exchanges code for user info and returns JWT tokens.
+ *
+ * Query params: code, state
+ * Optional body/query: appId, appSecret (for multi-account MP OAuth)
+ */
+router.get('/wechat/mp-callback', async (req, res) => {
+  const { code, state } = req.query;
+
+  if (!code) {
+    return res.status(400).json({ success: false, message: '缺少授权码' });
+  }
+
+  try {
+    const credentials = {};
+    if (req.query.appId) credentials.appId = req.query.appId;
+    if (req.query.appSecret) credentials.appSecret = req.query.appSecret;
+
+    const result = await WechatOAuthService.handleMpCallback(code, credentials);
+    res.json({
+      success: true,
+      data: {
+        user: result.user,
+        token: result.token,
+        refreshToken: result.refreshToken,
+        isNew: result.isNew,
+      },
+    });
+  } catch (err) {
+    console.error('WeChat MP OAuth callback error:', err.message);
+    res.status(err.statusCode || 500).json({
+      success: false,
+      message: err.message || '公众号授权登录失败，请重试',
+    });
+  }
+});
+
 module.exports = router;

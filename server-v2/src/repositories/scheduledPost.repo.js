@@ -39,6 +39,12 @@ const ScheduledPostRepo = {
       .where({ status: 'pending' })
       .where('publish_at', '<=', db.fn.now());
   },
+
+  async findScheduledDue() {
+    return db('scheduled_posts')
+      .whereIn('status', ['pending', 'scheduled'])
+      .where('publish_at', '<=', db.fn.now());
+  },
 };
 
 module.exports = ScheduledPostRepo;

@@ -103,4 +103,24 @@ router.post('/:id/publish', auth, async (req, res) => {
   }
 });
 
+// POST /:id/duplicate — 复制合集
+router.post('/:id/duplicate', auth, async (req, res) => {
+  try {
+    const result = await ArticleBatchService.duplicateBatch(req.user, req.params.id);
+    res.status(201).json({ success: true, data: result });
+  } catch (err) {
+    res.status(err.statusCode || 500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /:id/preview — 合集预览
+router.get('/:id/preview', auth, async (req, res) => {
+  try {
+    const result = await ArticleBatchService.getBatchPreview(req.user, req.params.id);
+    res.json({ success: true, data: result });
+  } catch (err) {
+    res.status(err.statusCode || 500).json({ success: false, message: err.message });
+  }
+});
+
 module.exports = router;

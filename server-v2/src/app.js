@@ -8,6 +8,7 @@ require('dotenv').config();
 const db = require('./config/db');
 const registerRoutes = require('./routes');
 const { initSocket } = require('./sockets');
+const SchedulerService = require('./services/scheduler.service');
 
 const app = express();
 const server = http.createServer(app);
@@ -62,6 +63,8 @@ db.raw('SELECT 1').then(() => {
   console.log('MySQL connected');
   server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    // Auto-start the scheduler after server is listening
+    SchedulerService.start();
   });
 }).catch(err => {
   console.error('MySQL connection failed:', err.message);

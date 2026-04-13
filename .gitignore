@@ -45,3 +45,8 @@ server-v2/.env
 
 # OpenCode config (contains API keys)
 .opencode.json
+
+# Test artifacts
+coverage/
+web/test-results/
+web/playwright-report/

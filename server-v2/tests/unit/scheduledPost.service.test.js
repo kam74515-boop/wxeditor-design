@@ -17,6 +17,10 @@ const ScheduledPostService = require('../../src/services/scheduledPost.service')
 
 jest.mock('../../src/repositories/scheduledPost.repo');
 jest.mock('../../src/repositories/wechatAccount.repo');
+jest.mock('../../src/services/scheduledPostLog.service', () => ({
+  create: jest.fn().mockResolvedValue({ id: 1 }),
+  listByPostId: jest.fn().mockResolvedValue([]),
+}));
 
 describe('ScheduledPostService', () => {
   const user = { id: 1, role: 'user' };

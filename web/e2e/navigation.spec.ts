@@ -38,9 +38,15 @@ test.describe('首页导航栏', () => {
     // 初始状态无阴影
     await expect(nav).not.toHaveClass(/topnav--scrolled/);
 
-    // 滚动触发
+    // 先确保页面有足够高度（在 body 尾部追加空白占位），再滚动
+    await page.evaluate(() => {
+      const spacer = document.createElement('div');
+      spacer.style.height = '2000px';
+      document.body.appendChild(spacer);
+    });
     await page.evaluate(() => window.scrollTo(0, 100));
-    await page.waitForTimeout(300);
+    // 等待 Vue 的 onMounted scroll listener 响应
+    await page.waitForTimeout(500);
 
     await expect(nav).toHaveClass(/topnav--scrolled/);
   });

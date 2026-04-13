@@ -360,6 +360,12 @@ export const wechatAccountApi = {
 
   testConnection: (id: string) =>
     http.post<ApiResponse<any>>(`/wechat-accounts/${id}/test`),
+
+  verify: (id: string) =>
+    http.post<ApiResponse<any>>(`/wechat-accounts/${id}/verify`),
+
+  getApiUsage: (id: string) =>
+    http.get<ApiResponse<{ totalCalls: number; remainingCalls: number; resetAt: string }>>(`/wechat-accounts/${id}/api-usage`),
 };
 
 // ==================== Settings APIs ====================

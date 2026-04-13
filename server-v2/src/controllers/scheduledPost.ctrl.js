@@ -53,4 +53,14 @@ router.post('/:id/execute', auth, async (req, res) => {
   }
 });
 
+// GET /:id/logs — 查看执行日志
+router.get('/:id/logs', auth, async (req, res) => {
+  try {
+    const result = await ScheduledPostService.getLogs(req.user, req.params.id, req.query);
+    res.json({ success: true, data: result });
+  } catch (err) {
+    res.status(err.statusCode || 500).json({ success: false, message: err.message });
+  }
+});
+
 module.exports = router;

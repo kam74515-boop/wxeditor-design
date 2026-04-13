@@ -239,6 +239,102 @@ const ArticleBatchService = {
       published_at: new Date().toISOString(),
     };
   },
+
+  /**
+   * 复制合集 — 深拷贝批次及其所有文章
+   */
+  async duplicateBatch(user, batchId) {
+    const batch = await ArticleBatchRepo.findById(batchId);
+    if (!batch) {
+      throw Object.assign(new Error('图文合集不存在'), { statusCode: 404 });
+    }
+    if (batch.user_id !== user.id && user.role !== 'admin') {
+      throw Object.assign(new Error('无权操作此图文合集'), { statusCode: 403 });
+    }
+
+    const articles = await ArticleBatchRepo.findArticlesByBatchId(batchId);
+
+    // Create new batch
+    const newBatch = await ArticleBatchRepo.createBatch({
+      user_id: user.id,
+      account_id: batch.account_id,
+      title: batch.title + ' (副本)',
+      status: 'draft',
+    });
+
+    // Copy all articles
+    for (const article of articles) {
+      await ArticleBatchRepo.createArticle({
+        batch_id: newBatch.id,
+        position: article.position,
+        title: article.title,
+        content: article.content || '',
+        cover_image: article.cover_image || '',
+        digest: article.digest || '',
+        author: article.author || '',
+        word_count: article.word_count || 0,
+        content_source_url: article.content_source_url || '',
+        show_cover_pic: article.show_cover_pic !== undefined ? article.show_cover_pic : true,
+        need_open_comment: article.need_open_comment || false,
+        only_fans_can_comment: article.only_fans_can_comment || false,
+      });
+    }
+
+    return ArticleBatchService.getDetail(user, newBatch.id);
+  },
+
+  /**
+   * 获取合集预览数据 — 包含所有文章完整内容
+   */
+  async getBatchPreview(user, batchId) {
+    const batch = await ArticleBatchRepo.findById(batchId);
+    if (!batch) {
+      throw Object.assign(new Error('图文合集不存在'), { statusCode: 404 });
+    }
+    if (batch.user_id !== user.id && user.role !== 'admin') {
+      throw Object.assign(new Error('无权访问此图文合集'), { statusCode: 403 });
+    }
+
+    const articles = await ArticleBatchRepo.findArticlesByBatchId(batchId);
+    if (articles.length === 0) {
+      throw Object.assign(new Error('合集内没有文章'), { statusCode: 400 });
+    }
+
+    // Build preview data
+    const totalWords = articles.reduce((sum, a) => sum + (a.word_count || 0), 0);
+
+    return {
+      batch: {
+        id: batch.id,
+        title: batch.title,
+        status: batch.status,
+        account_id: batch.account_id,
+        article_count: articles.length,
+        total_word_count: totalWords,
+        created_at: batch.created_at,
+        updated_at: batch.updated_at,
+      },
+      articles: articles.map((a, idx) => ({
+        position: a.position,
+        title: a.title,
+        content: a.content,
+        cover_image: a.cover_image,
+        digest: a.digest,
+        author: a.author,
+        word_count: a.word_count,
+        content_source_url: a.content_source_url,
+        show_cover_pic: a.show_cover_pic,
+        need_open_comment: a.need_open_comment,
+        only_fans_can_comment: a.only_fans_can_comment,
+      })),
+      summary: {
+        total_articles: articles.length,
+        total_word_count: totalWords,
+        has_cover: articles.every(a => !!a.cover_image),
+        ready_to_publish: articles.length > 0 && articles.every(a => !!a.title),
+      },
+    };
+  },
 };
 
 module.exports = ArticleBatchService;

@@ -4,19 +4,30 @@ const UserRepo = require('../repositories/user.repo');
 const { generateToken, generateRefreshToken } = require('../middleware/auth');
 
 /**
- * WeChat Open Platform OAuth2 Service
- * Docs: https://developers.weixin.qq.com/doc/op_platform/Website_App/WeChat_Login/WeChat_Login.html
+ * WeChat OAuth Service
+ *
+ * Part 1 – Open Platform (开放平台) QR-code login  (snsapi_login)
+ * Part 2 – MP (公众号) web-page authorization          (snsapi_base / snsapi_userinfo)
+ *
+ * Docs:
+ *   Open: https://developers.weixin.qq.com/doc/op_platform/Website_App/WeChat_Login/WeChat_Login.html
+ *   MP:   https://developers.weixin.qq.com/doc/offiaccount/OA_Web_Apps/Wechat_webpage_authorization.html
  */
 
 const WECHAT_OPEN_APPID = process.env.WECHAT_OPEN_APPID || '';
 const WECHAT_OPEN_SECRET = process.env.WECHAT_OPEN_SECRET || '';
 const WECHAT_OAUTH_REDIRECT_URI = process.env.WECHAT_OAUTH_REDIRECT_URI || '';
 
+// MP (公众号) 配置 —— 支持环境变量或从 wechat_accounts 动态获取
+const WECHAT_MP_APPID = process.env.WECHAT_MP_APPID || '';
+const WECHAT_MP_SECRET = process.env.WECHAT_MP_SECRET || '';
+const WECHAT_MP_REDIRECT_URI = process.env.WECHAT_MP_REDIRECT_URI || '';
+
+// ==================== Part 1: Open Platform OAuth ====================
+
 const WechatOAuthService = {
   /**
-   * Generate WeChat OAuth authorization URL for QR code login
-   * @param {string} state - CSRF protection token
-   * @returns {string} Authorization URL
+   * Generate WeChat Open Platform OAuth URL for QR-code login
    */
   getAuthUrl(state) {
     const params = new URLSearchParams({
@@ -26,23 +37,13 @@ const WechatOAuthService = {
       scope: 'snsapi_login',
       state: state || crypto.randomBytes(16).toString('hex'),
     });
-
     return `https://open.weixin.qq.com/connect/qrconnect?${params.toString()}#wechat_redirect`;
   },
 
-  /**
-   * Generate a random state for CSRF protection
-   * @returns {string}
-   */
   generateState() {
     return crypto.randomBytes(16).toString('hex');
   },
 
-  /**
-   * Exchange authorization code for access_token + openid
-   * @param {string} code - Authorization code from WeChat callback
-   * @returns {Promise<{access_token: string, openid: string, unionid?: string}>}
-   */
   async getAccessToken(code) {
     const params = new URLSearchParams({
       appid: WECHAT_OPEN_APPID,
@@ -54,7 +55,6 @@ const WechatOAuthService = {
     const response = await axios.get(
       `https://api.weixin.qq.com/sns/oauth2/access_token?${params.toString()}`
     );
-
     const data = response.data;
 
     if (data.errcode) {
@@ -74,22 +74,11 @@ const WechatOAuthService = {
     };
   },
 
-  /**
-   * Get WeChat user info using access_token + openid
-   * @param {string} accessToken
-   * @param {string} openid
-   * @returns {Promise<{openid, nickname, sex, headimgurl, unionid}>}
-   */
   async getUserInfo(accessToken, openid) {
-    const params = new URLSearchParams({
-      access_token: accessToken,
-      openid,
-    });
-
+    const params = new URLSearchParams({ access_token: accessToken, openid });
     const response = await axios.get(
       `https://api.weixin.qq.com/sns/userinfo?${params.toString()}`
     );
-
     const data = response.data;
 
     if (data.errcode) {
@@ -108,17 +97,156 @@ const WechatOAuthService = {
     };
   },
 
+  async handleCallback(code) {
+    const tokenData = await this.getAccessToken(code);
+    const wechatUser = await this.getUserInfo(tokenData.accessToken, tokenData.openid);
+    return this.findOrCreateUser(wechatUser);
+  },
+
+  // ==================== Part 2: MP OAuth (公众号网页授权) ====================
+
   /**
-   * Find or create a local user based on WeChat openid
-   * @param {object} wechatUser - { openid, nickname, headimgurl, unionid }
+   * Generate MP (公众号) web-page authorization URL
+   * @param {object} options
+   * @param {string} options.appId     - 公众号 appId (可选，默认用环境变量)
+   * @param {string} options.redirectUri - 回调地址 (可选，默认用环境变量)
+   * @param {string} options.scope     - 'snsapi_base' | 'snsapi_userinfo'
+   * @param {string} options.state     - CSRF state
+   * @returns {string} authorization URL
+   */
+  getMpAuthUrl(options = {}) {
+    const appId = options.appId || WECHAT_MP_APPID;
+    const redirectUri = options.redirectUri || WECHAT_MP_REDIRECT_URI;
+    const scope = options.scope || 'snsapi_userinfo';
+    const state = options.state || this.generateState();
+
+    if (!appId) {
+      throw Object.assign(new Error('缺少公众号 appId'), { statusCode: 400 });
+    }
+
+    const params = new URLSearchParams({
+      appid: appId,
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      scope,
+      state,
+    });
+
+    return `https://open.weixin.qq.com/connect/oauth2/authorize?${params.toString()}#wechat_redirect`;
+  },
+
+  /**
+   * Exchange authorization code for MP access_token + openid
+   * @param {string} code - authorization code from MP callback
+   * @param {object} credentials - { appId, appSecret } (optional, fall back to env)
+   * @returns {Promise<{accessToken, openid, unionid, expiresIn, refreshToken, scope}>}
+   */
+  async getMpAccessToken(code, credentials = {}) {
+    const appId = credentials.appId || WECHAT_MP_APPID;
+    const appSecret = credentials.appSecret || WECHAT_MP_SECRET;
+
+    if (!appId || !appSecret) {
+      throw Object.assign(new Error('缺少公众号 appId 或 appSecret'), { statusCode: 400 });
+    }
+
+    const params = new URLSearchParams({
+      appid: appId,
+      secret: appSecret,
+      code,
+      grant_type: 'authorization_code',
+    });
+
+    const response = await axios.get(
+      `https://api.weixin.qq.com/sns/oauth2/access_token?${params.toString()}`
+    );
+    const data = response.data;
+
+    if (data.errcode) {
+      const err = new Error(data.errmsg || '公众号网页授权 token 交换失败');
+      err.code = data.errcode;
+      err.statusCode = 400;
+      throw err;
+    }
+
+    return {
+      accessToken: data.access_token,
+      openid: data.openid,
+      unionid: data.unionid || null,
+      expiresIn: data.expires_in,
+      refreshToken: data.refresh_token,
+      scope: data.scope,
+    };
+  },
+
+  /**
+   * Get user info via MP OAuth (only works with scope=snsapi_userinfo)
+   * @param {string} accessToken - MP OAuth access_token (NOT the common access_token)
+   * @param {string} openid
+   * @param {string} lang - 'zh_CN' | 'zh_TW' | 'en'
+   */
+  async getMpUserInfo(accessToken, openid, lang = 'zh_CN') {
+    const params = new URLSearchParams({
+      access_token: accessToken,
+      openid,
+      lang,
+    });
+
+    const response = await axios.get(
+      `https://api.weixin.qq.com/sns/userinfo?${params.toString()}`
+    );
+    const data = response.data;
+
+    if (data.errcode) {
+      const err = new Error(data.errmsg || '获取公众号用户信息失败');
+      err.code = data.errcode;
+      err.statusCode = 400;
+      throw err;
+    }
+
+    return {
+      openid: data.openid,
+      nickname: data.nickname || '',
+      sex: data.sex,
+      province: data.province || '',
+      city: data.city || '',
+      country: data.country || '',
+      headimgurl: data.headimgurl || '',
+      unionid: data.unionid || null,
+      privilege: data.privilege || [],
+    };
+  },
+
+  /**
+   * Full MP OAuth callback handler: code -> token -> userinfo -> find/create user
+   * @param {string} code
+   * @param {object} credentials - { appId, appSecret } (optional)
    * @returns {Promise<{user, token, refreshToken, isNew}>}
    */
+  async handleMpCallback(code, credentials = {}) {
+    const tokenData = await this.getMpAccessToken(code, credentials);
+
+    let wechatUser;
+    if (tokenData.scope === 'snsapi_userinfo') {
+      wechatUser = await this.getMpUserInfo(tokenData.accessToken, tokenData.openid);
+    } else {
+      // snsapi_base — only openid is available
+      wechatUser = {
+        openid: tokenData.openid,
+        nickname: '',
+        headimgurl: '',
+        unionid: tokenData.unionid || null,
+      };
+    }
+
+    return this.findOrCreateUser(wechatUser);
+  },
+
+  // ==================== Shared User Lookup ====================
+
   async findOrCreateUser(wechatUser) {
-    // Try to find existing user by wechat openid stored in settings
     const existingUser = await UserRepo.findByWechatOpenid(wechatUser.openid);
 
     if (existingUser) {
-      // Update avatar if changed
       const updates = {};
       if (wechatUser.headimgurl && existingUser.avatar !== wechatUser.headimgurl) {
         updates.avatar = wechatUser.headimgurl;
@@ -136,7 +264,6 @@ const WechatOAuthService = {
       return { user: sanitizeUser(user), token, refreshToken, isNew: false };
     }
 
-    // Create new user from WeChat info
     const username = `wx_${wechatUser.openid.slice(-10)}`;
     const email = `${username}@wechat.placeholder`;
     const nickname = wechatUser.nickname || `微信用户${wechatUser.openid.slice(-4)}`;
@@ -168,24 +295,6 @@ const WechatOAuthService = {
     const token = generateToken(user.id);
     const refreshToken = generateRefreshToken(user.id);
     return { user: sanitizeUser(user), token, refreshToken, isNew: true };
-  },
-
-  /**
-   * Full OAuth callback handler: code -> token -> userinfo -> find/create user
-   * @param {string} code - Authorization code
-   * @returns {Promise<{user, token, refreshToken, isNew}>}
-   */
-  async handleCallback(code) {
-    // Step 1: Exchange code for access_token
-    const tokenData = await this.getAccessToken(code);
-
-    // Step 2: Get user info from WeChat
-    const wechatUser = await this.getUserInfo(tokenData.accessToken, tokenData.openid);
-
-    // Step 3: Find or create local user
-    const result = await this.findOrCreateUser(wechatUser);
-
-    return result;
   },
 };
 

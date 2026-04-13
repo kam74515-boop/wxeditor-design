@@ -5,3 +5,4 @@ export * from './editor';
 export * from './user';
 export * from './ai';
 export * from './app';
+export * from './wechat';
