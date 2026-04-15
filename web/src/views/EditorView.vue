@@ -240,8 +240,70 @@
         </div>
       </div>
 
+      <div v-if="showToolRunReview" class="chat-history-overlay" @click.self="showToolRunReview = false">
+        <div class="tool-run-popup">
+          <div class="chat-history-header">
+            <span>生成记录</span>
+            <button class="chat-history-close" @click="showToolRunReview = false"><el-icon><Close /></el-icon></button>
+          </div>
+          <div class="tool-run-toolbar">
+            <span class="tool-run-toolbar-meta">
+              {{ currentAiDocumentId ? `文档：#${currentAiDocumentId.slice(0, 8)}` : '当前未绑定文档' }}
+            </span>
+            <button class="tool-run-refresh" :disabled="toolRunHistoryLoading || !currentAiDocumentId" @click="loadToolRunHistory(true)">
+              {{ toolRunHistoryLoading ? '加载中...' : '刷新' }}
+            </button>
+          </div>
+          <div class="tool-run-body">
+            <div v-if="toolRunHistoryLoading" class="tool-run-empty">正在加载生成记录...</div>
+            <div v-else-if="toolRunHistoryError" class="tool-run-empty tool-run-error">{{ toolRunHistoryError }}</div>
+            <div v-else-if="toolRunHistoryList.length === 0" class="tool-run-empty">当前文档还没有生成记录</div>
+            <details
+              v-for="item in toolRunHistoryList"
+              :key="item.id"
+              class="tool-run-item"
+            >
+              <summary class="tool-run-summary">
+                <div class="tool-run-summary-main">
+                  <span class="tool-run-name">{{ item.tool_name }}</span>
+                  <span v-if="item.model" class="tool-run-model">{{ item.model }}</span>
+                </div>
+                <span class="tool-run-time">{{ formatToolRunTime(item.created_at) }}</span>
+              </summary>
+              <div class="tool-run-content">
+                <div v-if="item.reply" class="tool-run-reply">
+                  <span class="tool-run-block-title">文本回复</span>
+                  <p>{{ item.reply }}</p>
+                </div>
+                <div class="tool-run-block">
+                  <span class="tool-run-block-title">原始参数</span>
+                  <pre>{{ formatToolRunPayload(item.raw_args) }}</pre>
+                </div>
+                <div class="tool-run-block">
+                  <span class="tool-run-block-title">收口后参数</span>
+                  <pre>{{ formatToolRunPayload(item.normalized_args) }}</pre>
+                </div>
+              </div>
+            </details>
+          </div>
+        </div>
+      </div>
+
       <!-- 3.1 AI 助手区（完整交互面板） -->
       <div class="right-ai-card">
+        <div class="ai-panel-toolbar">
+          <div class="ai-panel-title">
+            <span>AI 助手</span>
+            <span v-if="currentAiDocumentId" class="ai-panel-doc">#{{ currentAiDocumentId.slice(0, 8) }}</span>
+          </div>
+          <button
+            class="ai-panel-link"
+            :disabled="toolRunHistoryLoading || !currentAiDocumentId"
+            @click="openToolRunReview"
+          >
+            {{ toolRunHistoryLoading && showToolRunReview ? '刷新中...' : '生成记录' }}
+          </button>
+        </div>
 
         <!-- 消息流 -->
         <div class="ai-content">
@@ -314,34 +376,34 @@
               <el-icon><Promotion /></el-icon>
             </button>
           </div>
-          <div v-if="aiStore.availableModels.length" ref="aiModelMenuRef" class="ai-input-meta">
-            <button
-              type="button"
-              class="ai-model-trigger"
-              :class="{ open: aiModelMenuOpen }"
-              :disabled="aiStore.isLoading || aiStore.availableModels.length <= 1"
-              @click="toggleAIModelMenu"
-            >
-              <span class="ai-model-trigger-text">{{ selectedAIModelDisplayName }}</span>
-              <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <polyline points="4 6 8 10 12 6" />
-              </svg>
-            </button>
-            <div v-if="aiModelMenuOpen" class="ai-model-menu">
-              <button
-                v-for="model in aiStore.availableModels"
-                :key="model.id"
-                type="button"
-                class="ai-model-option"
-                :class="{ active: model.id === aiStore.selectedModel }"
-                @click="selectAIModel(model.id)"
-              >
-                <span class="ai-model-option-provider">{{ aiStore.modelProviderLabel || '模型厂商' }}</span>
-                <span class="ai-model-option-name">{{ model.display_name }}</span>
-              </button>
-            </div>
-          </div>
           <input ref="fileInputRef" type="file" accept=".pdf,.doc,.docx,.html,.htm,.txt,.md,.png,.jpg,.jpeg,.gif,.webp,.svg" style="display:none" @change="handleFileSelect" />
+        </div>
+        <div v-if="aiStore.availableModels.length" ref="aiModelMenuRef" class="ai-input-meta">
+          <button
+            type="button"
+            class="ai-model-trigger"
+            :class="{ open: aiModelMenuOpen }"
+            :disabled="aiStore.isLoading || aiStore.availableModels.length <= 1"
+            @click="toggleAIModelMenu"
+          >
+            <span class="ai-model-trigger-text">{{ selectedAIModelDisplayName }}</span>
+            <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="4 6 8 10 12 6" />
+            </svg>
+          </button>
+          <div v-if="aiModelMenuOpen" class="ai-model-menu">
+            <button
+              v-for="model in aiStore.availableModels"
+              :key="model.id"
+              type="button"
+              class="ai-model-option"
+              :class="{ active: model.id === aiStore.selectedModel }"
+              @click="selectAIModel(model.id)"
+            >
+              <span class="ai-model-option-provider">{{ aiStore.modelProviderLabel || '模型厂商' }}</span>
+              <span class="ai-model-option-name">{{ model.display_name }}</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -531,8 +593,24 @@ interface ChatHistoryItem {
   time: string;
   messages: ChatMessage[];
 }
+
+interface ToolRunItem {
+  id: number;
+  tool_name: string;
+  tool_call_id?: string | null;
+  raw_args: string;
+  normalized_args: unknown;
+  reply?: string | null;
+  model?: string | null;
+  created_at?: string;
+}
+
 const showChatHistory = ref(false);
 const chatHistoryList = ref<ChatHistoryItem[]>([]);
+const showToolRunReview = ref(false);
+const toolRunHistoryList = ref<ToolRunItem[]>([]);
+const toolRunHistoryLoading = ref(false);
+const toolRunHistoryError = ref('');
 
 // 从 localStorage 加载历史记录
 function loadChatHistoryFromStorage() {
@@ -609,6 +687,7 @@ const activeTab = ref('templates');
 const previewMode = ref<'desktop' | 'mobile'>('desktop');
 const showCommentPanel = ref(false);
 const commentDocumentId = computed(() => (route.params.documentId as string) || currentProject.value?.id || '');
+const currentAiDocumentId = computed(() => (route.params.documentId as string) || currentProject.value?.id || '');
 const tabColors: Record<string, string> = {
   templates: '#BAE6FD',
   svg: '#DDD6FE',
@@ -623,6 +702,73 @@ function formatTime(date: Date | null | string): string {
   if (!date) return '';
   const d = new Date(date);
   return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+}
+
+function formatToolRunTime(value?: string): string {
+  if (!value) return '刚刚';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function formatToolRunPayload(value: unknown): string {
+  if (typeof value === 'string') {
+    try {
+      return JSON.stringify(JSON.parse(value), null, 2);
+    } catch {
+      return value;
+    }
+  }
+
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return String(value ?? '');
+  }
+}
+
+async function loadToolRunHistory(force = false) {
+  if (!currentAiDocumentId.value) {
+    toolRunHistoryList.value = [];
+    toolRunHistoryError.value = '';
+    return;
+  }
+
+  if (toolRunHistoryLoading.value) return;
+  if (!force && toolRunHistoryList.value.length > 0) return;
+
+  toolRunHistoryLoading.value = true;
+  toolRunHistoryError.value = '';
+
+  try {
+    const res: any = await http.get(`/ai/history/${currentAiDocumentId.value}/tool-runs?limit=20`);
+    if (res.success) {
+      toolRunHistoryList.value = Array.isArray(res.data) ? res.data : [];
+    } else {
+      toolRunHistoryList.value = [];
+      toolRunHistoryError.value = res.message || '加载生成记录失败';
+    }
+  } catch (error: any) {
+    toolRunHistoryList.value = [];
+    toolRunHistoryError.value = error?.response?.data?.message || error?.message || '加载生成记录失败';
+  } finally {
+    toolRunHistoryLoading.value = false;
+  }
+}
+
+async function openToolRunReview() {
+  if (!currentAiDocumentId.value) {
+    ElMessage.info('当前文档还没有可查看的生成记录');
+    return;
+  }
+
+  showToolRunReview.value = true;
+  await loadToolRunHistory(true);
 }
 
 import { debounce } from 'lodash-es';
@@ -1016,6 +1162,15 @@ function formatAIReply(text: string): string {
 
   return formatted.replace(/\n/g, '<br/>');
 }
+
+watch(currentAiDocumentId, () => {
+  toolRunHistoryList.value = [];
+  toolRunHistoryError.value = '';
+
+  if (showToolRunReview.value) {
+    loadToolRunHistory(true);
+  }
+});
 
 let streamRafId: number;
 // 流式写入编辑器：AI 工具调用参数到达时实时渲染（顺滑打字机效果）
@@ -1957,6 +2112,167 @@ body .edui-default .edui-arrow {
   &:hover { color: #e74c3c; background: rgba(231,76,60,0.08); }
 }
 
+.tool-run-popup {
+  background: #ffffff;
+  border-radius: 16px;
+  width: min(620px, calc(100vw - 48px));
+  max-height: calc(100vh - 120px);
+  border: none;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.18);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tool-run-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  background: #fffdf4;
+}
+
+.tool-run-toolbar-meta {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(0,0,0,0.52);
+}
+
+.tool-run-refresh {
+  border: none;
+  border-radius: 999px;
+  background: #111827;
+  color: #ffffff;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+
+  &:hover:not(:disabled) {
+    opacity: 0.92;
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.tool-run-body {
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tool-run-empty {
+  padding: 44px 20px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.tool-run-error {
+  color: #dc2626;
+}
+
+.tool-run-item {
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 14px;
+  background: #ffffff;
+  overflow: hidden;
+
+  &[open] .tool-run-summary {
+    background: #fffdf4;
+  }
+}
+
+.tool-run-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  cursor: pointer;
+  list-style: none;
+
+  &::-webkit-details-marker {
+    display: none;
+  }
+}
+
+.tool-run-summary-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.tool-run-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.tool-run-model {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: #4b5563;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.tool-run-time {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: #9ca3af;
+  font-weight: 600;
+}
+
+.tool-run-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 14px 14px;
+}
+
+.tool-run-reply,
+.tool-run-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tool-run-block-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(0,0,0,0.45);
+  letter-spacing: 0.02em;
+}
+
+.tool-run-reply p,
+.tool-run-block pre {
+  margin: 0;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid rgba(0,0,0,0.05);
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #1f2937;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+}
+
 /* 3.1 AI 卡片 */
 .right-ai-card {
   background: #FFEFA3;
@@ -1968,6 +2284,59 @@ body .edui-default .edui-arrow {
   min-height: 0;
   border: none;
   box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+
+  .ai-panel-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .ai-panel-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  .ai-panel-doc {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.65);
+    color: rgba(0,0,0,0.52);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+
+  .ai-panel-link {
+    border: none;
+    background: rgba(255,255,255,0.72);
+    color: #111827;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
+
+    &:hover:not(:disabled) {
+      background: #ffffff;
+      transform: translateY(-1px);
+    }
+
+    &:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+  }
 
 
   .ai-welcome {
@@ -2149,18 +2518,19 @@ body .edui-default .edui-arrow {
   }
 
   .ai-input {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+    display: block;
+    width: 100%;
     background: #ffffff;
-    border-radius: 22px;
-    padding: 8px 8px 10px;
+    border-radius: 999px;
+    padding: 8px;
     border: none;
     margin-top: 10px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.05);
 
     .ai-input-row {
       display: flex;
+      width: 100%;
+      box-sizing: border-box;
       align-items: center;
       gap: 8px;
       min-height: 38px;
@@ -2222,117 +2592,117 @@ body .edui-default .edui-arrow {
       &:hover { transform: scale(1.05); }
       &:disabled { opacity: 0.4; cursor: not-allowed; }
     }
+  }
 
-    .ai-input-meta {
-      position: relative;
-      display: flex;
-      justify-content: flex-start;
-      padding: 8px 8px 0;
-      border-top: 1px solid rgba(0, 0, 0, 0.08);
+  .ai-input-meta {
+    position: relative;
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 8px;
+    padding: 0 4px;
+  }
+
+  .ai-model-trigger {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.72);
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #1a1a1a;
+    outline: none;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+    cursor: pointer;
+    transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+
+    svg {
+      flex-shrink: 0;
+      transition: transform 0.18s ease;
     }
 
-    .ai-model-trigger {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      max-width: 100%;
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      background: rgba(255, 255, 255, 0.72);
-      border-radius: 999px;
-      padding: 6px 10px;
-      font-size: 12px;
-      font-weight: 600;
-      color: #1a1a1a;
-      outline: none;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
-      cursor: pointer;
-      transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
-
-      svg {
-        flex-shrink: 0;
-        transition: transform 0.18s ease;
-      }
-
-      &.open svg {
-        transform: rotate(180deg);
-      }
-
-      &:hover:not(:disabled) {
-        background: rgba(255, 255, 255, 0.92);
-        border-color: rgba(0, 0, 0, 0.12);
-      }
-
-      &:disabled {
-        opacity: 0.7;
-        cursor: not-allowed;
-      }
+    &.open svg {
+      transform: rotate(180deg);
     }
 
-    .ai-model-trigger-text {
-      display: block;
-      min-width: 0;
-      max-width: 180px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+    &:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.92);
+      border-color: rgba(0, 0, 0, 0.12);
     }
 
-    .ai-model-menu {
-      position: absolute;
-      left: 8px;
-      top: calc(100% + 8px);
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      width: min(220px, calc(100% - 16px));
-      padding: 8px;
-      border-radius: 16px;
-      background: rgba(255, 255, 255, 0.96);
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
-      border: 1px solid rgba(0, 0, 0, 0.06);
-      backdrop-filter: blur(10px);
-      z-index: 3;
+    &:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+  }
+
+  .ai-model-trigger-text {
+    display: block;
+    min-width: 0;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ai-model-menu {
+    position: absolute;
+    left: 8px;
+    top: calc(100% + 8px);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: min(220px, calc(100% - 16px));
+    padding: 8px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    backdrop-filter: blur(10px);
+    z-index: 3;
+  }
+
+  .ai-model-option {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    background: rgba(249, 250, 251, 0.92);
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+
+    &:hover {
+      background: #ffffff;
+      border-color: rgba(0, 0, 0, 0.08);
+      transform: translateY(-1px);
     }
 
-    .ai-model-option {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 2px;
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid transparent;
-      border-radius: 12px;
-      background: rgba(249, 250, 251, 0.92);
-      text-align: left;
-      cursor: pointer;
-      transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
-
-      &:hover {
-        background: #ffffff;
-        border-color: rgba(0, 0, 0, 0.08);
-        transform: translateY(-1px);
-      }
-
-      &.active {
-        background: #fff7cc;
-        border-color: rgba(255, 214, 10, 0.45);
-      }
+    &.active {
+      background: #fff7cc;
+      border-color: rgba(255, 214, 10, 0.45);
     }
+  }
 
-    .ai-model-option-provider {
-      font-size: 10px;
-      font-weight: 700;
-      color: rgba(0, 0, 0, 0.42);
-      letter-spacing: 0.02em;
-    }
+  .ai-model-option-provider {
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(0, 0, 0, 0.42);
+    letter-spacing: 0.02em;
+  }
 
-    .ai-model-option-name {
-      font-size: 12px;
-      font-weight: 700;
-      color: #1a1a1a;
-      line-height: 1.4;
-    }
+  .ai-model-option-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: #1a1a1a;
+    line-height: 1.4;
   }
 }
 

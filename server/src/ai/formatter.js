@@ -24,12 +24,12 @@ const TAG_STYLE_BUILDERS = {
   aside: buildSectionStyle,
   div: buildBlockStyle,
   p: buildParagraphStyle,
-  h1: (opts) => buildHeadingStyle(opts, 8),
-  h2: (opts) => buildHeadingStyle(opts, 4),
-  h3: (opts) => buildHeadingStyle(opts, 2),
-  h4: (opts) => buildHeadingStyle(opts, 1),
-  h5: (opts) => buildHeadingStyle(opts, 0),
-  h6: (opts) => buildHeadingStyle(opts, 0),
+  h1: (opts, styleMap) => buildHeadingStyle(opts, 8, styleMap),
+  h2: (opts, styleMap) => buildHeadingStyle(opts, 4, styleMap),
+  h3: (opts, styleMap) => buildHeadingStyle(opts, 2, styleMap),
+  h4: (opts, styleMap) => buildHeadingStyle(opts, 1, styleMap),
+  h5: (opts, styleMap) => buildHeadingStyle(opts, 0, styleMap),
+  h6: (opts, styleMap) => buildHeadingStyle(opts, 0, styleMap),
   ul: buildListStyle,
   ol: buildListStyle,
   li: buildListItemStyle,
@@ -223,7 +223,7 @@ function removeEmptyDecorativeBlocks(html) {
     .replace(/\n{3,}/g, '\n\n');
 }
 
-function buildSectionStyle(opts) {
+function buildSectionStyle(opts, styleMap = {}) {
   return serializeStyle({
     'max-width': '100%',
     'box-sizing': 'border-box',
@@ -231,37 +231,39 @@ function buildSectionStyle(opts) {
     'line-height': String(opts.lineHeight),
     color: opts.color,
     'margin-bottom': opts.paragraphSpacing,
+    ...pickBlockDecorations(styleMap),
   });
 }
 
-function buildBlockStyle(opts) {
+function buildBlockStyle(opts, styleMap = {}) {
   return serializeStyle({
     'font-size': `${opts.fontSize}px`,
     'line-height': String(opts.lineHeight),
     color: opts.color,
     'margin-bottom': opts.paragraphSpacing,
+    ...pickBlockDecorations(styleMap),
   });
 }
 
-function buildParagraphStyle(opts) {
+function buildParagraphStyle(opts, styleMap = {}) {
   return serializeStyle({
     'font-size': `${opts.fontSize}px`,
     'line-height': String(opts.lineHeight),
     color: opts.color,
     'margin-bottom': opts.paragraphSpacing,
-    'text-align': 'left',
+    'text-align': normalizeTextAlign(styleMap['text-align']) || 'left',
   });
 }
 
-function buildHeadingStyle(opts, sizeOffset) {
+function buildHeadingStyle(opts, sizeOffset, styleMap = {}) {
   return serializeStyle({
     'font-size': `${opts.fontSize + sizeOffset}px`,
     'font-weight': '700',
-    color: opts.headingColor,
+    color: normalizeColor(styleMap.color) || opts.headingColor,
     'line-height': '1.5',
     'margin-top': '1.2em',
     'margin-bottom': '0.4em',
-    'text-align': 'left',
+    'text-align': normalizeTextAlign(styleMap['text-align']) || 'left',
   });
 }
 
@@ -284,31 +286,32 @@ function buildListItemStyle(opts) {
   });
 }
 
-function buildBlockquoteStyle(opts) {
+function buildBlockquoteStyle(opts, styleMap = {}) {
   return serializeStyle({
-    'border-left': '3px solid #d6d9de',
+    'border-left': normalizeBorder(styleMap['border-left'], { defaultColor: '#d6d9de', defaultWidth: 3, onlyLeft: true }) || '3px solid #d6d9de',
     'padding-left': '1em',
     margin: '1em 0',
     color: '#555555',
     'font-size': `${Math.max(14, opts.fontSize - 1)}px`,
     'line-height': String(opts.lineHeight),
+    ...pickBackgroundDecoration(styleMap),
   });
 }
 
-function buildDividerStyle() {
+function buildDividerStyle(_opts, styleMap = {}) {
   return serializeStyle({
     border: '0',
-    'border-top': '1px solid #e5e7eb',
+    'border-top': normalizeBorder(styleMap['border-top'], { defaultColor: '#e5e7eb', defaultWidth: 1 }) || '1px solid #e5e7eb',
     margin: '1.25em 0',
     height: '0',
     background: 'transparent',
   });
 }
 
-function buildStrongStyle(opts) {
+function buildStrongStyle(opts, styleMap = {}) {
   return serializeStyle({
     'font-weight': '700',
-    color: opts.headingColor,
+    color: normalizeColor(styleMap.color) || opts.headingColor,
   });
 }
 
@@ -319,7 +322,14 @@ function buildEmphasisStyle() {
 }
 
 function buildSpanStyle(_opts, styleMap = {}) {
-  return serializeStyle(pickAllowedInlineStyle(styleMap));
+  return serializeStyle({
+    ...pickAllowedInlineStyle(styleMap),
+    ...pickBackgroundDecoration(styleMap),
+    ...(normalizeColor(styleMap.color) ? { color: normalizeColor(styleMap.color) } : {}),
+    ...(normalizeRadius(styleMap['border-radius']) ? { 'border-radius': normalizeRadius(styleMap['border-radius']) } : {}),
+    ...(normalizeSpacing(styleMap.padding) ? { padding: normalizeSpacing(styleMap.padding) } : {}),
+    ...(normalizeTextAlign(styleMap['text-align']) ? { 'text-align': normalizeTextAlign(styleMap['text-align']) } : {}),
+  });
 }
 
 function buildLinkStyle() {
@@ -349,11 +359,12 @@ function buildTableStyle() {
 
 function buildTableCellStyle(opts, styleMap = {}) {
   return serializeStyle({
-    'border': '1px solid #e5e7eb',
+    'border': normalizeBorder(styleMap.border, { defaultColor: '#e5e7eb', defaultWidth: 1 }) || '1px solid #e5e7eb',
     padding: '8px',
     'font-size': `${opts.fontSize}px`,
     'line-height': String(opts.lineHeight),
     color: styleMap.color && /^#(?:[0-9a-f]{3}){1,2}$/i.test(styleMap.color) ? styleMap.color : opts.color,
+    ...pickBackgroundDecoration(styleMap),
   });
 }
 
@@ -384,6 +395,98 @@ function pickAllowedInlineStyle(styleMap = {}) {
     allowed['text-decoration'] = 'underline';
   }
   return allowed;
+}
+
+function pickBlockDecorations(styleMap = {}) {
+  const decorations = {
+    ...pickBackgroundDecoration(styleMap),
+  };
+
+  const border = normalizeBorder(styleMap.border);
+  if (border) decorations.border = border;
+
+  const borderLeft = normalizeBorder(styleMap['border-left'], { onlyLeft: true });
+  if (borderLeft) decorations['border-left'] = borderLeft;
+
+  const padding = normalizeSpacing(styleMap.padding);
+  if (padding) decorations.padding = padding;
+
+  const radius = normalizeRadius(styleMap['border-radius']);
+  if (radius) decorations['border-radius'] = radius;
+
+  const textAlign = normalizeTextAlign(styleMap['text-align']);
+  if (textAlign) decorations['text-align'] = textAlign;
+
+  return decorations;
+}
+
+function pickBackgroundDecoration(styleMap = {}) {
+  const backgroundColor = normalizeBackgroundColor(styleMap);
+  return backgroundColor ? { 'background-color': backgroundColor } : {};
+}
+
+function normalizeBackgroundColor(styleMap = {}) {
+  return normalizeColor(styleMap['background-color']) || normalizeSolidBackground(styleMap.background);
+}
+
+function normalizeTextAlign(value) {
+  return /^(left|center|right)$/i.test(value || '') ? String(value).toLowerCase() : '';
+}
+
+function normalizeColor(value) {
+  if (typeof value !== 'string') return '';
+  const normalized = value.trim();
+  if (/^#(?:[0-9a-f]{3}){1,2}$/i.test(normalized)) return normalized;
+  if (/^rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}(?:\s*,\s*(?:0|0?\.\d+|1))?\s*\)$/i.test(normalized)) return normalized;
+  return '';
+}
+
+function normalizeSolidBackground(value) {
+  if (typeof value !== 'string') return '';
+  const normalized = value.trim();
+  if (!normalized || /(gradient|url\s*\(|var\s*\(|image)/i.test(normalized)) return '';
+  return normalizeColor(normalized);
+}
+
+function normalizeBorder(value, options = {}) {
+  if (typeof value !== 'string') return '';
+  const match = value.trim().match(/^(\d{1,2})px\s+(solid)\s+(.+)$/i);
+  if (!match) return '';
+
+  const width = Number(match[1]);
+  const color = normalizeColor(match[3]);
+  if (!color || width <= 0 || width > 3) return '';
+
+  if (options.onlyLeft) {
+    return `${Math.max(width, options.defaultWidth || 2)}px solid ${color || options.defaultColor || '#d6d9de'}`;
+  }
+
+  return `${width}px solid ${color}`;
+}
+
+function normalizeSpacing(value) {
+  if (typeof value !== 'string') return '';
+  const parts = value.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0 || parts.length > 4) return '';
+
+  const normalized = parts.map((part) => {
+    const match = part.match(/^(\d{1,2})(px)$/i);
+    if (!match) return '';
+    const size = Number(match[1]);
+    if (size < 0 || size > 24) return '';
+    return `${size}px`;
+  });
+
+  return normalized.every(Boolean) ? normalized.join(' ') : '';
+}
+
+function normalizeRadius(value) {
+  if (typeof value !== 'string') return '';
+  const match = value.trim().match(/^(\d{1,2})px$/i);
+  if (!match) return '';
+  const size = Number(match[1]);
+  if (size < 0 || size > 18) return '';
+  return `${size}px`;
 }
 
 function serializeStyle(styleMap = {}) {

@@ -86,6 +86,8 @@
           <el-select
             v-if="form.model_catalog.length"
             v-model="form.model"
+            :disabled="catalogSaving"
+            @change="handleDefaultModelChange"
             filterable
             placeholder="选择默认模型"
             style="width: 100%;"
@@ -118,13 +120,13 @@
             <div class="ai-model-manager__toolbar">
               <div class="ai-model-manager__summary">
                 <strong>从当前 URL 拉取模型列表</strong>
-                <span>新拉到的模型默认都会开放给前端选择；如果不想暴露，再在这里手动关闭。</span>
+                <span>新拉到的模型默认都会开放给前端选择；已保存的供应商在这里切换开关会立即保存，新建供应商则在底部统一保存。</span>
               </div>
               <div class="ai-model-manager__actions">
-                <el-button :loading="modelSyncing" @click="syncModelCatalog">
+                <el-button :loading="modelSyncing" :disabled="catalogSaving" @click="syncModelCatalog">
                   拉取模型
                 </el-button>
-                <el-button @click="addManualModel">
+                <el-button :disabled="catalogSaving" @click="addManualModel">
                   手动添加
                 </el-button>
               </div>
@@ -145,12 +147,14 @@
                 <el-input
                   v-if="item.is_manual"
                   v-model="item.id"
+                  @change="handleModelCatalogMutation"
+                  :disabled="catalogSaving"
                   placeholder="例如: qwen-plus"
                 />
                 <code v-else class="ai-model-manager__id">{{ item.id }}</code>
-                <el-input v-model="item.display_name" placeholder="前端显示名称" />
-                <el-switch v-model="item.visible" />
-                <button class="ai-model-manager__remove" @click="removeModel(item.local_key)">
+                <el-input v-model="item.display_name" :disabled="catalogSaving" @change="handleModelCatalogMutation" placeholder="前端显示名称" />
+                <el-switch v-model="item.visible" :disabled="catalogSaving" @change="handleModelCatalogMutation" />
+                <button class="ai-model-manager__remove" :disabled="catalogSaving" @click="removeModel(item.local_key)">
                   删除
                 </button>
               </div>
@@ -208,6 +212,7 @@ const editingId = ref<number | null>(null);
 const testingId = ref<number | null>(null);
 const formTesting = ref(false);
 const modelSyncing = ref(false);
+const catalogSaving = ref(false);
 let modelLocalSeed = 0;
 const form = ref({
   name: '',
@@ -376,12 +381,52 @@ function addManualModel() {
   });
 }
 
-function removeModel(localKey: string) {
+async function persistModelCatalog(options: { successMessage?: string; silent?: boolean; strict?: boolean } = {}) {
+  if (!editingId.value) return false;
+
+  try {
+    const models = serializeModelCatalog({ strict: options.strict !== false });
+    catalogSaving.value = true;
+    const response: any = await http.put(`/admin/ai-configs/${editingId.value}/models`, {
+      default_model: form.value.model,
+      models,
+    });
+    form.value.model_catalog = normalizeModelCatalog(response.data?.models || models);
+    form.value.model = response.data?.default_model || form.value.model;
+    await fetchConfigs();
+
+    if (!options.silent) {
+      ElMessage.success(options.successMessage || response.message || '模型目录已保存');
+    }
+    return true;
+  } catch (err: any) {
+    ElMessage.error(err?.response?.data?.message || err?.message || '模型目录保存失败');
+    return false;
+  } finally {
+    catalogSaving.value = false;
+  }
+}
+
+async function handleModelCatalogMutation() {
+  if (!editingId.value) return;
+  await persistModelCatalog({ successMessage: '模型启用状态已保存', strict: false });
+}
+
+async function handleDefaultModelChange() {
+  if (!editingId.value || !form.value.model_catalog.length) return;
+  await persistModelCatalog({ successMessage: '默认模型已保存', strict: false });
+}
+
+async function removeModel(localKey: string) {
   const removed = form.value.model_catalog.find((item) => item.local_key === localKey);
   form.value.model_catalog = form.value.model_catalog.filter((item) => item.local_key !== localKey);
 
   if (removed?.id && form.value.model === removed.id) {
     form.value.model = form.value.model_catalog[0]?.id || '';
+  }
+
+  if (editingId.value && removed?.id) {
+    await persistModelCatalog({ successMessage: '模型目录已保存', strict: false });
   }
 }
 
@@ -412,7 +457,18 @@ async function syncModelCatalog() {
     const response: any = await http.post('/admin/ai-configs/models/fetch', payload);
     form.value.model_catalog = normalizeModelCatalog(response.data?.models || []);
     form.value.model = response.data?.default_model || form.value.model;
-    ElMessage.success(response.message || `已同步 ${form.value.model_catalog.length} 个模型`);
+    if (editingId.value) {
+      const saved = await persistModelCatalog({
+        successMessage: response.message || `已同步并保存 ${form.value.model_catalog.length} 个模型`,
+        silent: true,
+        strict: false,
+      });
+      if (saved) {
+        ElMessage.success(response.message || `已同步并保存 ${form.value.model_catalog.length} 个模型`);
+      }
+    } else {
+      ElMessage.success(response.message || `已同步 ${form.value.model_catalog.length} 个模型`);
+    }
   } catch (err: any) {
     ElMessage.error(err?.response?.data?.message || err?.message || '同步模型失败');
   } finally {
