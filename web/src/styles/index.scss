@@ -1,0 +1,234 @@
+@use 'variables' as *;
+
+// 重置样式
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: $font-family;
+  color: $text-primary;
+  background-color: $bg-light;
+  line-height: 1.5;
+  overflow: hidden; /* 禁止页面级滚动 — 各页面内部自行处理 */
+}
+
+html, #app {
+  overflow: hidden;
+  max-width: 100vw;
+}
+
+// 深色模式
+html.dark {
+  body {
+    color: #f1f5f9;
+    background-color: $bg-dark;
+  }
+}
+
+// 链接
+a {
+  color: $primary;
+  text-decoration: none;
+  transition: color $transition-fast;
+
+  &:hover {
+    color: $primary-light;
+  }
+}
+
+// 按钮重置
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  outline: none;
+}
+
+// 输入框重置
+input, textarea {
+  font-family: inherit;
+  outline: none;
+}
+
+// 滚动条样式
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.25);
+  }
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.15);
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+  }
+}
+
+// 工具类
+.no-scrollbar {
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+// 主色文本
+.text-primary {
+  color: $primary;
+}
+
+// 主色背景
+.bg-primary {
+  background-color: $primary;
+}
+
+// 渐变背景
+.gradient-primary {
+  background: linear-gradient(135deg, $primary 0%, $primary-light 100%);
+}
+
+// 阴影
+.shadow-primary {
+  box-shadow: 0 4px 14px 0 rgba($primary, 0.25);
+}
+
+// Flex 工具类
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+// 动画
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { 
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease;
+}
+
+.animate-slideIn {
+  animation: slideIn 0.3s ease;
+}
+
+.hover-lift {
+  transition: transform $transition-fast, box-shadow $transition-fast;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: $shadow-lg;
+  }
+}
+
+.hover-scale {
+  transition: transform $transition-fast;
+
+  &:hover {
+    transform: scale(1.03);
+  }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hover-lift,
+  .hover-scale {
+    transition: none;
+  }
+
+  .hover-lift:hover,
+  .hover-scale:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .animate-fade-up,
+  .animate-scale-in,
+  .animate-fadeIn,
+  .animate-slideIn {
+    animation: none;
+  }
+}
+
+// NProgress 样式
+#nprogress {
+  .bar {
+    background: $primary !important;
+    height: 2px !important;
+  }
+  
+  .peg {
+    box-shadow: 0 0 10px $primary, 0 0 5px $primary !important;
+  }
+}

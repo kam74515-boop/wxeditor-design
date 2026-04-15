@@ -1,0 +1,33 @@
+/* 微信公众号编辑器兼容 CSS */
+/* 编辑器 iframe 内 body 样式重置为微信公众号环境 */
+body {
+  margin: 0 !important;
+  padding: 0 !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif !important;
+  font-size: 16px;
+  line-height: 1.6;
+  word-wrap: break-word;
+  word-break: break-all;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 确保图片不超出容器 */
+body img {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+/* SVG 容器适配 */
+body svg {
+  max-width: 100%;
+}
+
+/* section 标签重置（微信公众号核心容器） */
+body section {
+  box-sizing: border-box;
+}
+
+/* 确保 foreignObject 内容正确渲染 */
+body foreignObject {
+  overflow: visible;
+}

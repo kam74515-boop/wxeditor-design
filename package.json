@@ -1,0 +1,19 @@
+{
+  "name": "wxeditor-server",
+  "version": "1.0.0",
+  "description": "基于 UEditor 二次开发的微信公众号图文编辑器，支持一键同步到公众号草稿箱，类似秀米的操作体验。",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "dev:server": "cd server && npm run dev",
+    "dev:web": "cd web && npm run dev",
+    "install:all": "npm install && cd server && npm install && cd ../web && npm install"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

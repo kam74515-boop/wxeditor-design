@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+server/.env
+server/.env.*
+server/.env.production
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+
+# Build output
+dist/
+web/dist/
+
+# Uploads
+server/public/uploads/*
+!server/public/uploads/.gitkeep
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temporary
+tmp/
+temp/
+server/test_*.js
+server-v2/.env
+
+# OpenCode config (contains API keys)
+.opencode.json
+
+# Codex local state
+.codex-staging/
+
+# Test artifacts
+coverage/
+web/test-results/
+web/playwright-report/

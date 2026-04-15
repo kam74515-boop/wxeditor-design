@@ -1,0 +1,845 @@
+/**
+ * UEditor 全量扁平化主题覆写
+ * 黄色主题 (#FFE066) + 扁平无渐变
+ */
+
+/* ======================
+   1. 编辑器整体容器
+   ====================== */
+.edui-default {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+.edui-editor {
+  border: none !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+
+/* ======================
+   2. 工具栏容器：44px 黄底
+   ====================== */
+.edui-editor-toolbarbox {
+  background: #FFEFA3 !important;
+  background-image: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  height: 52px !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+.edui-editor-toolbarboxouter {
+  background: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.edui-editor-toolbarboxinner {
+  background: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  height: 52px !important;
+  display: flex !important;
+  align-items: center !important;
+  padding: 0 8px !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+/* ======================
+   3. 工具栏 flex 容器
+   ====================== */
+.edui-toolbar {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  gap: 1px !important;
+  flex: 1 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  height: 52px !important;
+}
+
+/* ======================
+   4. 所有按钮统一外层
+   ====================== */
+.edui-toolbar .edui-button,
+.edui-toolbar .edui-splitbutton,
+.edui-toolbar .edui-menubutton,
+.edui-toolbar .edui-combox {
+  height: 32px !important;
+  width: 32px !important;
+  min-width: 32px !important;
+  background: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  border-radius: 6px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: background 0.15s !important;
+  vertical-align: middle !important;
+}
+
+/* 有箭头的按钮加宽 */
+.edui-toolbar .edui-splitbutton,
+.edui-toolbar .edui-menubutton {
+  width: 42px !important;
+  min-width: 42px !important;
+}
+.edui-toolbar .edui-combox {
+  width: auto !important;
+  min-width: 42px !important;
+}
+
+/* hover / active */
+.edui-toolbar .edui-button:hover,
+.edui-toolbar .edui-splitbutton:hover,
+.edui-toolbar .edui-menubutton:hover,
+.edui-toolbar .edui-combox:hover {
+  background: rgba(255,255,255,0.45) !important;
+}
+.edui-state-hover .edui-button,
+.edui-state-hover .edui-splitbutton,
+.edui-state-hover .edui-menubutton,
+.edui-state-hover .edui-combox {
+  background: rgba(255,255,255,0.45) !important;
+  background-image: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+.edui-state-active .edui-button,
+.edui-state-active .edui-splitbutton,
+.edui-state-active .edui-menubutton,
+.edui-state-active .edui-combox,
+.edui-state-checked .edui-button {
+  background: rgba(255,255,255,0.6) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+/* ======================
+   5. 按钮内部全层透明+居中
+   ====================== */
+
+/* 外层 edui-box */
+.edui-toolbar > .edui-box {
+  display: inline-flex !important;
+  align-items: center !important;
+  height: 32px !important;
+  vertical-align: middle !important;
+}
+
+/* state div (所有按钮类型) */
+.edui-toolbar .edui-button > div,
+.edui-toolbar .edui-splitbutton > div,
+.edui-toolbar .edui-menubutton > div,
+.edui-toolbar .edui-combox > div {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 32px !important;
+  background: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* menubutton-body（有序/无序列表的主体） */
+.edui-menubutton-body {
+  display: flex !important;
+  align-items: center !important;
+  height: 32px !important;
+  background: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* button-wrap */
+.edui-button-wrap {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 32px !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* button-body */
+.edui-button-body,
+.edui-box.edui-button-body {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 32px !important;
+  background: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* splitbutton-body */
+.edui-splitbutton-body {
+  display: flex !important;
+  align-items: center !important;
+  height: 32px !important;
+  background: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* combox-body */
+.edui-combox-body {
+  display: flex !important;
+  align-items: center !important;
+  height: 32px !important;
+  background: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 4px !important;
+  margin: 0 !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #333 !important;
+  white-space: nowrap !important;
+}
+
+/* ======================
+   6. 图标 16x16 居中
+   ====================== */
+.edui-toolbar .edui-icon,
+.edui-toolbar .edui-box.edui-icon {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 16px !important;
+  height: 16px !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* edui-box 通用 */
+.edui-box {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* ======================
+   7. 下拉箭头 CSS 三角
+   ====================== */
+.edui-box.edui-arrow,
+.edui-box.edui-arrow.edui-default {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 12px !important;
+  height: 32px !important;
+  margin-left: 2px !important;
+  background: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  cursor: pointer !important;
+}
+.edui-toolbar .edui-box.edui-arrow::after {
+  content: '' !important;
+  display: block !important;
+  width: 0 !important;
+  height: 0 !important;
+  border-left: 3px solid transparent !important;
+  border-right: 3px solid transparent !important;
+  border-top: 4px solid #555 !important;
+}
+
+/* 文字标签 */
+.edui-toolbar .edui-box.edui-label {
+  display: flex !important;
+  align-items: center !important;
+  height: 32px !important;
+  padding: 0 1px !important;
+  font-size: 11px !important;
+}
+
+/* ======================
+   8. splitborder 隐藏
+   ====================== */
+.edui-splitborder,
+.edui-box.edui-splitborder,
+.edui-box.edui-splitborder.edui-default {
+  display: none !important;
+}
+
+/* 颜色色块 */
+.edui-colorlump {
+  display: block !important;
+  width: 14px !important;
+  height: 3px !important;
+  border-radius: 1px !important;
+  margin-top: 1px !important;
+}
+
+/* ======================
+   9. 自定义对齐循环按钮
+   ====================== */
+.custom-align-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: background 0.15s !important;
+  color: #333 !important;
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  flex-shrink: 0 !important;
+}
+.custom-align-btn:hover {
+  background: rgba(255,255,255,0.45) !important;
+}
+
+/* ======================
+   隐藏全屏按钮
+   ====================== */
+.edui-for-fullscreen {
+  display: none !important;
+}
+
+/* ==========================================
+   颜色选择器增强（字体颜色 / 背景色）
+   ========================================== */
+.edui-default .edui-colorpicker {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 8px !important;
+  width: 196px !important;
+  box-sizing: border-box !important;
+}
+.edui-default .edui-colorpicker-topbar {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 2px 0 8px !important;
+  margin-bottom: 6px !important;
+  border-bottom: 1px solid rgba(0,0,0,0.06) !important;
+  background: transparent !important;
+}
+.edui-default .edui-colorpicker-recommend,
+.edui-default .edui-colorpicker-nocolor {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: #666 !important;
+  cursor: pointer !important;
+  padding: 3px 8px !important;
+  border-radius: 4px !important;
+  transition: background 0.12s, color 0.12s !important;
+}
+.edui-default .edui-colorpicker-recommend:hover,
+.edui-default .edui-colorpicker-nocolor:hover {
+  background: rgba(255,239,163,0.5) !important;
+  color: #333 !important;
+}
+.edui-default .edui-colorpicker table {
+  border-collapse: separate !important;
+  border-spacing: 3px !important;
+  width: 100% !important;
+}
+.edui-default .edui-colorpicker-tablecell {
+  padding: 0 !important;
+  border: none !important;
+}
+.edui-default .edui-colorpicker-colorcell {
+  display: block !important;
+  width: 100% !important;
+  height: 16px !important;
+  border-radius: 3px !important;
+  cursor: pointer !important;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08) !important;
+  transition: transform 0.1s ease, box-shadow 0.1s ease !important;
+  text-decoration: none !important;
+  background-image: none !important;
+}
+.edui-default .edui-colorpicker-colorcell:hover {
+  transform: scale(1.3) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18), inset 0 0 0 1px rgba(0,0,0,0.15) !important;
+  z-index: 10 !important;
+  position: relative !important;
+}
+
+/* ==========================================
+   表格选择器增强
+   ========================================== */
+.edui-default .edui-tablepicker {
+  background: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  padding: 8px !important;
+}
+.edui-default .edui-tablepicker-cell {
+  border: 1.5px solid rgba(0,0,0,0.1) !important;
+  border-radius: 3px !important;
+  transition: background 0.08s, border-color 0.08s !important;
+}
+.edui-default .edui-tablepicker-cell.edui-tablepicker-cell-on {
+  background: #FFEFA3 !important;
+  border-color: rgba(0,0,0,0.2) !important;
+}
+
+/* ==========================================
+   对话框（链接 / 图片 / 视频等）
+   ========================================== */
+.edui-default .edui-dialog {
+  border: 1px solid rgba(0,0,0,0.06) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.06) !important;
+  overflow: hidden !important;
+  background: #fff !important;
+}
+.edui-default .edui-dialog-titlebar {
+  background: #FFEFA3 !important;
+  height: 44px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0 16px !important;
+  border-bottom: 1px solid rgba(0,0,0,0.04) !important;
+}
+.edui-default .edui-dialog-caption {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: #222 !important;
+}
+.edui-default .edui-dialog-closebutton {
+  width: 24px !important;
+  height: 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 5px !important;
+  cursor: pointer !important;
+  transition: background 0.12s !important;
+}
+.edui-default .edui-dialog-closebutton:hover {
+  background: rgba(0,0,0,0.08) !important;
+}
+.edui-default .edui-dialog-body {
+  background: #fff !important;
+  padding: 0 !important;
+}
+.edui-default .edui-dialog-foot {
+  background: #fafafa !important;
+  padding: 12px 16px !important;
+  border-top: 1px solid rgba(0,0,0,0.05) !important;
+  text-align: right !important;
+}
+.edui-default .edui-dialog-foot .edui-button {
+  display: inline-block !important;
+  margin-left: 8px !important;
+}
+.edui-default .edui-dialog-foot .edui-button-body {
+  background: #fff !important;
+  border: 1px solid rgba(0,0,0,0.1) !important;
+  padding: 6px 18px !important;
+  border-radius: 6px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #333 !important;
+  cursor: pointer !important;
+  transition: background 0.12s, box-shadow 0.12s !important;
+}
+.edui-default .edui-dialog-foot .edui-okbutton .edui-button-body {
+  background: #FFEFA3 !important;
+  border-color: transparent !important;
+  color: #111 !important;
+}
+.edui-default .edui-dialog-foot .edui-button-body:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+}
+.edui-default .edui-dialog-foot .edui-okbutton .edui-button-body:hover {
+  background: #ffe066 !important;
+}
+/* ----------------------------------------------------------
+   P7. 遮罩层
+   ---------------------------------------------------------- */
+.edui-modal-layer {
+  background: rgba(0,0,0,0.25) !important;
+  backdrop-filter: blur(2px) !important;
+}
+
+/* ----------------------------------------------------------
+   P8. 底部状态栏隐藏
+   ---------------------------------------------------------- */
+.edui-editor-bottombar {
+  display: none !important;
+}
+
+/* ----------------------------------------------------------
+   P9. 编辑区 iframe 容器
+   ---------------------------------------------------------- */
+.edui-editor-iframeholder {
+  min-height: 600px;
+}
+
+/* ----------------------------------------------------------
+   P10. 全局去渐变兜底（排除图标/body等不应被影响的层）
+   ---------------------------------------------------------- */
+[class*="edui-"]:not(.edui-icon):not(.edui-box):not(.edui-button-body):not(.edui-splitbutton-body):not(.edui-combox-body) {
+  background-image: none !important;
+}
+
+.edui-default .edui-state-hover,
+.edui-default .edui-state-active,
+.edui-default .edui-state-checked {
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+
+/* =============================================
+   专业颜色选择器 (WxColorPicker) 样式
+   ============================================= */
+
+
+
+
+
+
+
+
+
+/* 有序无序列表展开菜单中隐藏多余的空图标 div */
+.edui-default .edui-for-insertorderedlist .edui-menuitem .edui-icon,
+.edui-default .edui-for-insertunorderedlist .edui-menuitem .edui-icon {
+  display: none !important;
+}
+
+/* ==========================================
+   自定义颜色选择器（wx-color-picker）
+   ========================================== */
+.wx-color-picker {
+  position: fixed;
+  z-index: 99999;
+  width: 268px;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 14px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.16), 0 4px 12px rgba(0,0,0,0.06);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ---- 头部 ---- */
+.wx-cp-header {
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1a1a1a;
+  background: #FFEFA3;
+  letter-spacing: 0.3px;
+}
+.wx-cp-header-icon {
+  display: flex;
+  align-items: center;
+  opacity: 0.6;
+}
+
+/* ---- 主体 ---- */
+.wx-cp-body {
+  padding: 10px 10px 8px;
+}
+
+/* ---- 选色区域 ---- */
+.wx-cp-picker-area {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.wx-cp-sv-wrap {
+  position: relative;
+  width: 216px;
+  height: 140px;
+  flex-shrink: 0;
+  border-radius: 8px;
+}
+.wx-cp-sv {
+  border-radius: 8px;
+  cursor: crosshair;
+  display: block;
+  width: 216px;
+  height: 140px;
+}
+.wx-cp-sv-cursor {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #333;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  box-shadow: 0 0 0 1.5px rgba(255,255,255,0.6), 0 2px 6px rgba(0,0,0,0.3);
+  z-index: 2;
+}
+
+.wx-cp-hue-wrap {
+  position: relative;
+  width: 28px;
+  height: 140px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 8px;
+}
+.wx-cp-hue {
+  border-radius: 8px;
+  cursor: pointer;
+  display: block;
+  width: 28px;
+  height: 140px;
+}
+.wx-cp-hue-cursor {
+  position: absolute;
+  left: -2px;
+  width: 32px;
+  height: 8px;
+  border: 2px solid #fff;
+  border-radius: 5px;
+  transform: translateY(-50%);
+  pointer-events: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(0,0,0,0.1);
+  z-index: 2;
+}
+
+/* ---- 输入行 ---- */
+.wx-cp-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.wx-cp-preview {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1px solid rgba(0,0,0,0.08);
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.06);
+}
+.wx-cp-color-input {
+  flex: 1;
+  height: 28px;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 7px;
+  padding: 0 8px;
+  font-size: 12px;
+  font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+  color: #333;
+  outline: none;
+  background: #f8f8f8;
+  transition: border-color 0.15s, background 0.15s;
+  box-sizing: border-box;
+}
+.wx-cp-color-input:focus {
+  border-color: rgba(0,0,0,0.2);
+  background: #fff;
+}
+.wx-cp-btn-clear {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 7px;
+  cursor: pointer;
+  color: #999;
+  flex-shrink: 0;
+  transition: all 0.12s;
+}
+.wx-cp-btn-clear:hover {
+  background: #fee;
+  color: #e53;
+  border-color: rgba(229,51,51,0.2);
+}
+
+/* ---- 分区 ---- */
+.wx-cp-section {
+  margin-bottom: 8px;
+}
+.wx-cp-section-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(0,0,0,0.35);
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.wx-cp-section-icon {
+  opacity: 0.4;
+}
+
+/* ---- 预设颜色网格 ---- */
+.wx-cp-presets {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 2px;
+}
+.wx-cp-preset {
+  aspect-ratio: 1;
+  border-radius: 3px;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+.wx-cp-preset:hover {
+  transform: scale(1.3);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2), inset 0 0 0 1px rgba(0,0,0,0.12);
+  z-index: 1;
+  position: relative;
+  border-radius: 4px;
+}
+
+/* ---- 色块（文章色卡 + 调色板） ---- */
+.wx-cp-article-colors,
+.wx-cp-palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 20px;
+}
+.wx-cp-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+.wx-cp-swatch:hover {
+  transform: scale(1.25);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2), inset 0 0 0 1px rgba(0,0,0,0.12);
+  z-index: 1;
+  position: relative;
+}
+.wx-cp-empty {
+  font-size: 10px;
+  color: rgba(0,0,0,0.25);
+  font-style: italic;
+  padding: 2px 0;
+}
+
+/* ---- 底部操作栏 ---- */
+.wx-cp-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px solid rgba(0,0,0,0.05);
+  margin-top: 2px;
+}
+.wx-cp-eyedropper {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: transparent;
+  border: none;
+  font-size: 11px;
+  font-weight: 500;
+  color: #888;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: background 0.12s, color 0.12s;
+}
+.wx-cp-eyedropper:hover {
+  background: rgba(255,239,163,0.5);
+  color: #333;
+}
+.wx-cp-eyedropper svg {
+  stroke: currentColor;
+}
+
+.wx-cp-actions {
+  display: flex;
+  gap: 4px;
+}
+.wx-cp-btn-save {
+  background: transparent;
+  border: 1px solid rgba(0,0,0,0.08);
+  font-size: 11px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.12s;
+}
+.wx-cp-btn-save:hover {
+  background: #f5f5f5;
+  border-color: rgba(0,0,0,0.15);
+  color: #333;
+}
+.wx-cp-btn-apply {
+  background: #FFEFA3;
+  border: none;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1a1a1a;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 6px;
+  transition: all 0.12s;
+}
+.wx-cp-btn-apply:hover {
+  background: #ffe066;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* ---- 工具栏图标适配 ---- */
+.edui-default .edui-colorbutton .edui-icon svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}

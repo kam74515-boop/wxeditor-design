@@ -1,0 +1,36 @@
+{
+  "UEDITOR_HOME_URL": "/ueditor/",
+  "serverUrl": "/api/ueditor",
+  "toolbars": [
+    [
+      "source", "|", "undo", "redo", "|",
+      "bold", "italic", "underline", "strikethrough", "|",
+      "forecolor", "backcolor", "|",
+      "fontfamily", "fontsize", "|",
+      "justifyleft", "justifycenter", "justifyright", "|",
+      "link", "unlink", "|",
+      "insertimage", "insertvideo", "|",
+      "insertorderedlist", "insertunorderedlist", "|",
+      "rowspacingtop", "rowspacingbottom", "|",
+      "lineheight", "|",
+      "blockquote", "preview", "fullscreen"
+    ]
+  ],
+  "initialFrameWidth": "100%",
+  "initialFrameHeight": 500,
+  "enableAutoSave": true,
+  "saveInterval": 5000,
+  "imageUrl": "/api/upload/image",
+  "imagePath": "/uploads/",
+  "scrawlUrl": "/api/upload/scrawl",
+  "scrawlPath": "/uploads/",
+  "imageManagerUrl": "/api/ueditor/listimage",
+  "imageManagerPath": "/uploads/",
+  "fileUrl": "/api/upload/file",
+  "filePath": "/uploads/",
+  "catchRemoteImageEnable": true,
+  "catcherPath": "/uploads/",
+  "lang": "zh-cn",
+  "theme": "default",
+  "zIndex": 100
+}
