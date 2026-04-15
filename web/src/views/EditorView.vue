@@ -717,6 +717,7 @@ async function loadOrCreateDocument() {
 
 // 初始化编辑器
 onMounted(async () => {
+  document.addEventListener('pointerdown', handleAIModelClickOutside);
   aiStore.loadAvailableModels();
 
   // 如果 URL 没有 documentId，说明要新建文档，先清掉持久化残留内容
@@ -913,8 +914,28 @@ function handleTitleChange() {
   debouncedSave();
 }
 
-function handleAIModelChange(event: Event) {
-  aiStore.setSelectedModel((event.target as HTMLSelectElement).value);
+const aiModelMenuOpen = ref(false);
+const aiModelMenuRef = ref<HTMLElement | null>(null);
+const selectedAIModelDisplayName = computed(() => {
+  const currentModel = aiStore.availableModels.find((model) => model.id === aiStore.selectedModel);
+  return currentModel?.display_name || aiStore.modelProviderLabel || '选择模型';
+});
+
+function toggleAIModelMenu() {
+  if (aiStore.isLoading || aiStore.availableModels.length <= 1) return;
+  aiModelMenuOpen.value = !aiModelMenuOpen.value;
+}
+
+function selectAIModel(modelId: string) {
+  aiStore.setSelectedModel(modelId);
+  aiModelMenuOpen.value = false;
+}
+
+function handleAIModelClickOutside(event: PointerEvent) {
+  const target = event.target as Node | null;
+  if (!target || !aiModelMenuRef.value?.contains(target)) {
+    aiModelMenuOpen.value = false;
+  }
 }
 
 // AI 发送消息（右侧聊天面板，支持附件）
@@ -1082,6 +1103,7 @@ onMounted(() => {
 });
 onBeforeUnmount(() => {
   if (wordCountTimer) clearInterval(wordCountTimer);
+  document.removeEventListener('pointerdown', handleAIModelClickOutside);
 });
 </script>
 
@@ -2202,52 +2224,43 @@ body .edui-default .edui-arrow {
     }
 
     .ai-input-meta {
+      position: relative;
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
+      justify-content: flex-start;
       padding: 8px 8px 0;
       border-top: 1px solid rgba(0, 0, 0, 0.08);
     }
 
-    .ai-inline-model {
+    .ai-model-trigger {
       display: flex;
       align-items: center;
-      gap: 8px;
-      min-width: 0;
-      flex: 1;
-    }
-
-    .ai-inline-model-label {
-      flex-shrink: 0;
-      font-size: 11px;
-      font-weight: 700;
-      color: rgba(0, 0, 0, 0.48);
-    }
-
-    .ai-inline-model-select {
-      flex: 1;
-      width: 100%;
-      min-width: 0;
+      gap: 6px;
       max-width: 100%;
       border: 1px solid rgba(0, 0, 0, 0.08);
       background: rgba(255, 255, 255, 0.72);
       border-radius: 999px;
-      padding: 6px 28px 6px 10px;
+      padding: 6px 10px;
       font-size: 12px;
       font-weight: 600;
       color: #1a1a1a;
       outline: none;
       box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
-      appearance: none;
-      background-image:
-        linear-gradient(45deg, transparent 50%, rgba(0, 0, 0, 0.45) 50%),
-        linear-gradient(135deg, rgba(0, 0, 0, 0.45) 50%, transparent 50%);
-      background-position:
-        calc(100% - 14px) calc(50% - 2px),
-        calc(100% - 9px) calc(50% - 2px);
-      background-size: 5px 5px, 5px 5px;
-      background-repeat: no-repeat;
+      cursor: pointer;
+      transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+
+      svg {
+        flex-shrink: 0;
+        transition: transform 0.18s ease;
+      }
+
+      &.open svg {
+        transform: rotate(180deg);
+      }
+
+      &:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.92);
+        border-color: rgba(0, 0, 0, 0.12);
+      }
 
       &:disabled {
         opacity: 0.7;
@@ -2255,11 +2268,70 @@ body .edui-default .edui-arrow {
       }
     }
 
-    .ai-input-hint {
-      flex-shrink: 0;
-      font-size: 11px;
-      font-weight: 600;
-      color: rgba(0, 0, 0, 0.38);
+    .ai-model-trigger-text {
+      display: block;
+      min-width: 0;
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .ai-model-menu {
+      position: absolute;
+      left: 8px;
+      top: calc(100% + 8px);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      width: min(220px, calc(100% - 16px));
+      padding: 8px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      backdrop-filter: blur(10px);
+      z-index: 3;
+    }
+
+    .ai-model-option {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      background: rgba(249, 250, 251, 0.92);
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+
+      &:hover {
+        background: #ffffff;
+        border-color: rgba(0, 0, 0, 0.08);
+        transform: translateY(-1px);
+      }
+
+      &.active {
+        background: #fff7cc;
+        border-color: rgba(255, 214, 10, 0.45);
+      }
+    }
+
+    .ai-model-option-provider {
+      font-size: 10px;
+      font-weight: 700;
+      color: rgba(0, 0, 0, 0.42);
+      letter-spacing: 0.02em;
+    }
+
+    .ai-model-option-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: #1a1a1a;
+      line-height: 1.4;
     }
   }
 }

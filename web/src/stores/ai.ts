@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import type { ChatMessage } from '@/types';
 import http from '@/utils/http';
+import { extractStreamingHtmlArgument, normalizeStreamingPreviewHtml } from '@/utils/ai-html-preview';
 
 // AI 返回的结构化编辑器操作
 export interface EditorAction {
@@ -296,18 +297,11 @@ export const useAIStore = defineStore('ai', () => {
       case 'tool_delta':
         // 工具参数流式到达：实时更新 streamingHtml 供编辑器渲染（打字机效果）
         if (data.tool === 'replace_editor_content' || data.tool === 'insert_content') {
-          const htmlMatch = data.argumentsSoFar.match(/"html"\s*:\s*"((?:[^"\\]|\\.)*)/);
-          if (htmlMatch) {
-            try {
-              streamingHtml.value = JSON.parse('"' + htmlMatch[1] + '"');
-            } catch {
-              try {
-                const cleaned = htmlMatch[1].replace(/\\$/, '');
-                streamingHtml.value = JSON.parse('"' + cleaned + '"');
-              } catch {
-                streamingHtml.value = htmlMatch[1];
-              }
-            }
+          const extractedHtml = extractStreamingHtmlArgument(data.argumentsSoFar || '');
+          if (extractedHtml !== null) {
+            streamingHtml.value = normalizeStreamingPreviewHtml(extractedHtml, {
+              wrapSections: data.tool === 'replace_editor_content',
+            });
           }
         }
         break;
