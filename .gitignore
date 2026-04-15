@@ -51,6 +51,9 @@ server-v2/.env
 # Codex local state
 .codex-staging/
 
+# Nested external repositories
+awesome-design-md/
+
 # Test artifacts
 coverage/
 web/test-results/
