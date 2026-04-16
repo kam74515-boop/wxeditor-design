@@ -1,7 +1,8 @@
 const axios = require('axios');
 
 function normalizeBaseUrl(baseUrl = '') {
-  return String(baseUrl || '').trim().replace(/\/+$/, '');
+  const normalized = String(baseUrl || '').trim().replace(/\/+$/, '');
+  return normalized.replace(/\/(chat\/completions|completions|models)$/i, '');
 }
 
 function parseExtraParams(extraParams) {

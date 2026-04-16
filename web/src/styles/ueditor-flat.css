@@ -84,8 +84,9 @@
   align-items: center !important;
   justify-content: center !important;
   cursor: pointer !important;
-  transition: background 0.15s !important;
+  transition: background 0.15s, color 0.15s !important;
   vertical-align: middle !important;
+  color: rgba(0,0,0,0.6) !important;
 }
 
 /* 有箭头的按钮加宽 */
@@ -99,31 +100,7 @@
   min-width: 42px !important;
 }
 
-/* hover / active */
-.edui-toolbar .edui-button:hover,
-.edui-toolbar .edui-splitbutton:hover,
-.edui-toolbar .edui-menubutton:hover,
-.edui-toolbar .edui-combox:hover {
-  background: rgba(255,255,255,0.45) !important;
-}
-.edui-state-hover .edui-button,
-.edui-state-hover .edui-splitbutton,
-.edui-state-hover .edui-menubutton,
-.edui-state-hover .edui-combox {
-  background: rgba(255,255,255,0.45) !important;
-  background-image: none !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-.edui-state-active .edui-button,
-.edui-state-active .edui-splitbutton,
-.edui-state-active .edui-menubutton,
-.edui-state-active .edui-combox,
-.edui-state-checked .edui-button {
-  background: rgba(255,255,255,0.6) !important;
-  background-image: none !important;
-  box-shadow: none !important;
-}
+/* hover / active / checked 状态由 EditorView.vue 中的 :deep() 样式控制 */
 
 /* ======================
    5. 按钮内部全层透明+居中
@@ -326,7 +303,7 @@
   flex-shrink: 0 !important;
 }
 .custom-align-btn:hover {
-  background: rgba(255,255,255,0.45) !important;
+  background: rgba(255,255,255,0.5) !important;
 }
 
 /* ======================

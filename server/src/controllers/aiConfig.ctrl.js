@@ -4,397 +4,234 @@ const db = require('../config/db');
 const {
   testAiConfigConnection,
   toRuntimeAiConfig,
-  toSafeAiConfig,
-  validateAiConfigPayload,
+  buildProviderUrl,
 } = require('../utils/ai-config');
-const AiModelCatalogService = require('../services/aiModelCatalog.service');
+const axios = require('axios');
 
 const router = express.Router();
 
-async function buildRemoteCatalogConfig(payload = {}, { existingConfig = null } = {}) {
-  const mergedConfig = {
-    ...(existingConfig || {}),
-    ...payload,
-  };
-
-  if (payload.api_key === '') {
-    mergedConfig.api_key = existingConfig?.api_key || '';
-  }
-
-  if (mergedConfig.base_url !== undefined) {
-    mergedConfig.base_url = toRuntimeAiConfig({ base_url: mergedConfig.base_url }).base_url;
-  }
-
-  if (!mergedConfig.api_key || !String(mergedConfig.api_key).trim()) {
-    throw Object.assign(new Error('请先填写可用的 API Key，再拉取模型列表'), { statusCode: 400 });
-  }
-
-  if (!mergedConfig.base_url || !String(mergedConfig.base_url).trim()) {
-    throw Object.assign(new Error('请先填写可用的 Base URL，再拉取模型列表'), { statusCode: 400 });
-  }
-
-  const normalizedModel = String(mergedConfig.model || '').trim();
-  return {
-    ...(existingConfig || {}),
-    ...mergedConfig,
-    model: normalizedModel,
-  };
-}
-
-router.get('/active', auth, async (req, res) => {
-  try {
-    const config = await db('ai_configs').where({ is_active: 1 }).first();
-    if (!config) return res.status(404).json({ success: false, message: '没有活跃的 AI 配置' });
-    res.json({ success: true, data: toSafeAiConfig(config) });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
+// ====== 供应商 API ======
 
 router.use(auth, restrictTo('admin', 'superadmin'));
 
-router.get('/', async (req, res) => {
+// 获取所有供应商
+router.get('/suppliers', async (req, res) => {
   try {
-    const configs = await db('ai_configs')
-      .select(
-        'id',
-        'name',
-        'provider',
-        'api_key',
-        'base_url',
-        'model',
-        'temperature',
-        'max_tokens',
-        'top_p',
-        'is_active',
-        'status',
-        'extra_params',
-        'created_at',
-        'updated_at'
-      )
-      .orderBy('is_active', 'desc')
+    const suppliers = await db('ai_configs')
+      .select('id', 'name', 'base_url', 'created_at')
       .orderBy('created_at', 'desc');
-
-    const catalogMap = await AiModelCatalogService.getCatalogMap(configs);
-    const safeConfigs = configs.map((config) => {
-      const modelCatalog = catalogMap[config.id] || [];
-      const defaultModel = modelCatalog.find((item) => item.id === config.model);
-
-      return {
-        ...toSafeAiConfig(config),
-        model_catalog: modelCatalog,
-        visible_model_count: modelCatalog.filter((item) => item.visible).length,
-        default_model_display_name: defaultModel?.display_name || config.model,
-      };
-    });
-    res.json({ success: true, data: safeConfigs });
+    res.json({ success: true, data: suppliers });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
-router.post('/models/fetch', async (req, res) => {
+// 创建供应商
+router.post('/suppliers', async (req, res) => {
   try {
-    const configId = req.body.config_id || req.body.id;
-    const existingConfig = configId
-      ? await db('ai_configs').where({ id: configId }).first()
-      : null;
-
-    if (configId && !existingConfig) {
-      return res.status(404).json({ success: false, message: 'AI 配置不存在' });
+    const { name, api_key, base_url } = req.body;
+    if (!name || !api_key || !base_url) {
+      return res.status(400).json({ success: false, message: '缺少必要字段' });
     }
-
-    const fetchConfig = await buildRemoteCatalogConfig(req.body, { existingConfig });
-    const remoteCatalog = await AiModelCatalogService.fetchRemoteCatalog(fetchConfig);
-    const existingCatalog = Array.isArray(req.body.model_catalog)
-      ? req.body.model_catalog
-      : existingConfig
-        ? await AiModelCatalogService.getCatalogForConfig({
-            ...existingConfig,
-            model: fetchConfig.model || existingConfig.model,
-          })
-        : [];
-
-    const defaultModel = String(fetchConfig.model || existingConfig?.model || '').trim();
-    const models = AiModelCatalogService.mergeCatalog(existingCatalog, remoteCatalog, defaultModel);
-    const matchedDefaultModel = models.find((item) => item.id === defaultModel);
-
-    res.json({
-      success: true,
-      message: `已拉取 ${models.length} 个模型`,
-      data: {
-        default_model: defaultModel,
-        default_model_display_name: matchedDefaultModel?.display_name || defaultModel,
-        models,
-      },
-    });
-  } catch (err) {
-    res.status(err.statusCode || 500).json({ success: false, message: err.message });
-  }
-});
-
-router.get('/:id/models', async (req, res) => {
-  try {
-    const config = await db('ai_configs').where({ id: req.params.id }).first();
-    if (!config) return res.status(404).json({ success: false, message: 'AI 配置不存在' });
-
-    const models = await AiModelCatalogService.getCatalogForConfig(config);
-    const defaultModel = models.find((item) => item.id === config.model);
-
-    res.json({
-      success: true,
-      data: {
-        default_model: config.model,
-        default_model_display_name: defaultModel?.display_name || config.model,
-        models,
-      },
-    });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-router.get('/:id', async (req, res) => {
-  try {
-    const config = await db('ai_configs').where({ id: req.params.id }).first();
-    if (!config) return res.status(404).json({ success: false, message: 'AI 配置不存在' });
-    const modelCatalog = await AiModelCatalogService.getCatalogForConfig(config);
-    const defaultModel = modelCatalog.find((item) => item.id === config.model);
-    res.json({
-      success: true,
-      data: {
-        ...toSafeAiConfig(config, { includeApiKey: req.user.role === 'superadmin' }),
-        model_catalog: modelCatalog,
-        visible_model_count: modelCatalog.filter((item) => item.visible).length,
-        default_model_display_name: defaultModel?.display_name || config.model,
-      },
-    });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-router.post('/', async (req, res) => {
-  try {
-    validateAiConfigPayload(req.body);
-
-    const {
-      name,
-      provider,
-      api_key,
-      base_url,
-      model,
-      temperature,
-      top_p,
-      extra_params,
-      model_catalog,
-    } = req.body;
 
     const [id] = await db('ai_configs').insert({
       name: String(name).trim(),
-      provider: String(provider).trim(),
       api_key: String(api_key).trim(),
       base_url: toRuntimeAiConfig({ base_url }).base_url,
-      model: String(model).trim(),
-      temperature: temperature ?? 0.7,
-      max_tokens: null,
-      top_p: top_p ?? 0.95,
-      extra_params: JSON.stringify(extra_params || {}),
+      provider: 'custom',
+      model: '',
+      is_active: 0,
     });
 
-    if (Array.isArray(model_catalog)) {
-      await AiModelCatalogService.saveCatalogForConfig(id, model_catalog, { defaultModel: model });
-    }
-
-    res.status(201).json({ success: true, message: 'AI 供应商配置已创建', data: { id } });
+    res.status(201).json({ success: true, message: '供应商已创建', data: { id } });
   } catch (err) {
-    res.status(err.statusCode || 500).json({ success: false, message: err.message });
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 
-router.put('/:id', async (req, res) => {
+// 更新供应商
+router.put('/suppliers/:id', async (req, res) => {
   try {
-    const existing = await db('ai_configs').where({ id: req.params.id }).first();
-    if (!existing) return res.status(404).json({ success: false, message: 'AI 配置不存在' });
-    validateAiConfigPayload(req.body, { partial: true });
-
+    const { name, api_key, base_url } = req.body;
     const updates = {};
-    let nextDefaultModel = existing.model;
-    ['name', 'provider', 'api_key', 'base_url', 'model', 'temperature', 'top_p'].forEach(k => {
-      if (req.body[k] !== undefined) updates[k] = req.body[k];
-    });
-    if (updates.model !== undefined) {
-      nextDefaultModel = String(updates.model).trim();
-    }
-    if (updates.base_url !== undefined) {
-      updates.base_url = toRuntimeAiConfig({ base_url: updates.base_url }).base_url;
-    }
-    if (req.body.extra_params !== undefined) updates.extra_params = JSON.stringify(req.body.extra_params);
+    if (name !== undefined) updates.name = String(name).trim();
+    if (api_key !== undefined) updates.api_key = String(api_key).trim();
+    if (base_url !== undefined) updates.base_url = toRuntimeAiConfig({ base_url }).base_url;
     updates.updated_at = new Date();
 
     await db('ai_configs').where({ id: req.params.id }).update(updates);
-
-    if (req.body.model_catalog !== undefined) {
-      if (!Array.isArray(req.body.model_catalog)) {
-        throw Object.assign(new Error('model_catalog 必须是数组'), { statusCode: 400 });
-      }
-      await AiModelCatalogService.saveCatalogForConfig(req.params.id, req.body.model_catalog, {
-        defaultModel: nextDefaultModel,
-      });
-    } else if (updates.model !== undefined) {
-      const existingCatalog = await AiModelCatalogService.getCatalogForConfig({
-        id: req.params.id,
-        model: nextDefaultModel,
-      });
-      await AiModelCatalogService.saveCatalogForConfig(req.params.id, existingCatalog, {
-        defaultModel: nextDefaultModel,
-      });
-    }
-
-    res.json({ success: true, message: 'AI 配置已更新' });
+    res.json({ success: true, message: '供应商已更新' });
   } catch (err) {
-    res.status(err.statusCode || 500).json({ success: false, message: err.message });
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 
-router.post('/:id/models/sync', async (req, res) => {
+// 删除供应商
+router.delete('/suppliers/:id', async (req, res) => {
   try {
-    const config = await db('ai_configs').where({ id: req.params.id }).first();
-    if (!config) return res.status(404).json({ success: false, message: 'AI 配置不存在' });
+    await db('ai_configs').where({ id: req.params.id }).delete();
+    res.json({ success: true, message: '供应商已删除' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
 
-    const fetchConfig = await buildRemoteCatalogConfig(req.body, { existingConfig: config });
-    const remoteCatalog = await AiModelCatalogService.fetchRemoteCatalog(fetchConfig);
-    const incomingCatalog = Array.isArray(req.body.model_catalog)
-      ? req.body.model_catalog
-      : await AiModelCatalogService.getCatalogForConfig({
-          ...config,
-          model: fetchConfig.model || config.model,
-        });
-    const defaultModelId = String(fetchConfig.model || config.model || '').trim();
-    const models = AiModelCatalogService.mergeCatalog(incomingCatalog, remoteCatalog, defaultModelId);
-
-    await AiModelCatalogService.saveCatalogForConfig(req.params.id, models, { defaultModel: defaultModelId });
-    if (defaultModelId && defaultModelId !== config.model) {
-      await db('ai_configs').where({ id: req.params.id }).update({
-        model: defaultModelId,
-        updated_at: new Date(),
-      });
+// 测试供应商连接
+router.post('/suppliers/:id/test', async (req, res) => {
+  try {
+    const supplier = await db('ai_configs').where({ id: req.params.id }).first();
+    if (!supplier) {
+      return res.status(404).json({ success: false, message: '供应商不存在' });
     }
 
-    const defaultModel = models.find((item) => item.id === defaultModelId);
-
-    res.json({
-      success: true,
-      message: `已同步 ${models.length} 个模型`,
-      data: {
-        default_model: defaultModelId,
-        default_model_display_name: defaultModel?.display_name || defaultModelId,
-        models,
-      },
+    await axios.get(buildProviderUrl(supplier.base_url, '/models'), {
+      timeout: 10000,
+      headers: { 'Authorization': `Bearer ${supplier.api_key}` },
     });
+
+    res.json({ success: true, message: '连接成功' });
   } catch (err) {
-    res.status(err.statusCode || 500).json({ success: false, message: err.message });
+    res.status(500).json({ success: false, message: '连接失败: ' + (err.message || '未知错误') });
   }
 });
 
-router.put('/:id/models', async (req, res) => {
+// 从供应商同步模型
+router.post('/suppliers/:id/sync', async (req, res) => {
   try {
-    const config = await db('ai_configs').where({ id: req.params.id }).first();
-    if (!config) return res.status(404).json({ success: false, message: 'AI 配置不存在' });
-    if (!Array.isArray(req.body.models)) {
+    const supplier = await db('ai_configs').where({ id: req.params.id }).first();
+    if (!supplier) {
+      return res.status(404).json({ success: false, message: '供应商不存在' });
+    }
+
+    const response = await axios.get(buildProviderUrl(supplier.base_url, '/models'), {
+      timeout: 15000,
+      headers: { 'Authorization': `Bearer ${supplier.api_key}` },
+    });
+
+    const remoteModels = Array.isArray(response.data?.data) ? response.data.data : 
+                         Array.isArray(response.data) ? response.data : [];
+    
+    const syncedModels = [];
+    for (const m of remoteModels) {
+      const modelId = m.id || m.model;
+      if (!modelId) continue;
+
+      const existing = await db('ai_models')
+        .where({ model_id: modelId, supplier_id: supplier.id })
+        .first();
+
+      if (!existing) {
+        await db('ai_models').insert({
+          model_id: modelId,
+          display_name: m.display_name || m.name || modelId,
+          supplier_id: supplier.id,
+          visible: false,
+        });
+      }
+      syncedModels.push(modelId);
+    }
+
+    res.json({ success: true, message: `已同步 ${syncedModels.length} 个模型`, data: { count: syncedModels.length } });
+  } catch (err) {
+    res.status(500).json({ success: false, message: '同步失败: ' + (err.message || '未知错误') });
+  }
+});
+
+// ====== 模型 API ======
+
+// 获取所有模型（管理员）
+router.get('/models', async (req, res) => {
+  try {
+    const models = await db('ai_models')
+      .leftJoin('ai_configs', 'ai_models.supplier_id', 'ai_configs.id')
+      .select(
+        'ai_models.id',
+        'ai_models.model_id',
+        'ai_models.display_name',
+        'ai_models.supplier_id',
+        'ai_models.visible',
+        'ai_models.temperature',
+        'ai_models.top_p',
+        'ai_models.max_tokens',
+        'ai_models.sort_order',
+        'ai_models.fallback_model_id',
+        'ai_configs.name as supplier_name'
+      )
+      .orderBy('ai_models.sort_order', 'asc');
+
+    res.json({ success: true, data: models });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 创建模型
+router.post('/models', async (req, res) => {
+  try {
+    const { model_id, display_name, supplier_id } = req.body;
+    if (!model_id || !supplier_id) {
+      return res.status(400).json({ success: false, message: 'model_id 和 supplier_id 必填' });
+    }
+
+    const [id] = await db('ai_models').insert({
+      model_id: String(model_id).trim(),
+      display_name: String(display_name || model_id).trim(),
+      supplier_id,
+      visible: false,
+    });
+
+    res.status(201).json({ success: true, message: '模型已创建', data: { id } });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 更新模型配置
+router.put('/models/:id', async (req, res) => {
+  try {
+    const { display_name, visible, temperature, top_p, max_tokens, sort_order, fallback_model_id, supplier_id } = req.body;
+    const updates = {};
+
+    if (display_name !== undefined) updates.display_name = String(display_name).trim();
+    if (visible !== undefined) updates.visible = Boolean(visible);
+    if (temperature !== undefined) updates.temperature = temperature;
+    if (top_p !== undefined) updates.top_p = top_p;
+    if (max_tokens !== undefined) updates.max_tokens = max_tokens;
+    if (sort_order !== undefined) updates.sort_order = sort_order;
+    if (fallback_model_id !== undefined) updates.fallback_model_id = fallback_model_id;
+    if (supplier_id !== undefined) updates.supplier_id = supplier_id;
+    updates.updated_at = new Date();
+
+    await db('ai_models').where({ id: req.params.id }).update(updates);
+    res.json({ success: true, message: '模型配置已更新' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 批量更新模型排序
+router.put('/models-order', async (req, res) => {
+  try {
+    const { models } = req.body;
+    if (!Array.isArray(models)) {
       return res.status(400).json({ success: false, message: 'models 必须是数组' });
     }
 
-    const nextDefaultModel = String(req.body.default_model || config.model || '').trim();
-    if (!nextDefaultModel) {
-      return res.status(400).json({ success: false, message: 'default_model 不能为空' });
+    for (const item of models) {
+      await db('ai_models').where({ id: item.id }).update({ sort_order: item.sort_order });
     }
 
-    const models = await AiModelCatalogService.saveCatalogForConfig(req.params.id, req.body.models, {
-      defaultModel: nextDefaultModel,
-    });
-
-    if (nextDefaultModel !== config.model) {
-      await db('ai_configs').where({ id: req.params.id }).update({
-        model: nextDefaultModel,
-        updated_at: new Date(),
-      });
-    }
-
-    const defaultModel = models.find((item) => item.id === nextDefaultModel);
-    res.json({
-      success: true,
-      message: '模型列表已更新',
-      data: {
-        default_model: nextDefaultModel,
-        default_model_display_name: defaultModel?.display_name || nextDefaultModel,
-        models,
-      },
-    });
+    res.json({ success: true, message: '排序已更新' });
   } catch (err) {
-    res.status(err.statusCode || 500).json({ success: false, message: err.message });
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 
-router.post('/test', async (req, res) => {
+// 删除模型
+router.delete('/models/:id', async (req, res) => {
   try {
-    validateAiConfigPayload(req.body);
-    const result = await testAiConfigConnection(req.body);
-    res.json({ success: true, data: result, message: 'AI 配置连接成功' });
-  } catch (err) {
-    res.status(err.statusCode || 500).json({ success: false, message: err.message });
-  }
-});
-
-router.post('/:id/test', async (req, res) => {
-  try {
-    const config = await db('ai_configs').where({ id: req.params.id }).first();
-    if (!config) return res.status(404).json({ success: false, message: 'AI 配置不存在' });
-
-    const result = await testAiConfigConnection(config);
-    await db('ai_configs').where({ id: req.params.id }).update({
-      status: 'connected',
-      updated_at: new Date(),
-    });
-
-    res.json({ success: true, data: result, message: 'AI 配置连接成功' });
-  } catch (err) {
-    await db('ai_configs').where({ id: req.params.id }).update({
-      status: 'error',
-      updated_at: new Date(),
-    });
-    res.status(err.statusCode || 500).json({ success: false, message: err.message });
-  }
-});
-
-router.post('/:id/activate', async (req, res) => {
-  try {
-    const config = await db('ai_configs').where({ id: req.params.id }).first();
-    if (!config) return res.status(404).json({ success: false, message: 'AI 配置不存在' });
-
-    await testAiConfigConnection(config);
-
-    await db.transaction(async (trx) => {
-      await trx('ai_configs').update({ is_active: 0, status: 'standby', updated_at: new Date() });
-      await trx('ai_configs').where({ id: req.params.id }).update({ is_active: 1, status: 'connected', updated_at: new Date() });
-    });
-    res.json({ success: true, message: `已切换活跃供应商为: ${config.name}` });
-  } catch (err) {
-    await db('ai_configs').where({ id: req.params.id }).update({
-      status: 'error',
-      updated_at: new Date(),
-    });
-    res.status(err.statusCode || 500).json({ success: false, message: err.message });
-  }
-});
-
-router.delete('/:id', async (req, res) => {
-  try {
-    const config = await db('ai_configs').where({ id: req.params.id }).first();
-    if (!config) return res.status(404).json({ success: false, message: 'AI 配置不存在' });
-    if (config.is_active) return res.status(400).json({ success: false, message: '不能删除当前活跃的供应商' });
-    await db('ai_configs').where({ id: req.params.id }).delete();
-    res.json({ success: true, message: 'AI 配置已删除' });
+    await db('ai_models').where({ id: req.params.id }).delete();
+    res.json({ success: true, message: '模型已删除' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

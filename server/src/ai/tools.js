@@ -10,13 +10,13 @@ const TOOLS = {
     type: 'function',
     function: {
       name: 'replace_editor_content',
-      description: '整体替换正文内容。默认输出简洁、可读的公众号文章排版，优先使用标题、小标题、段落、列表，不要海报式大标题区、渐变卡片墙、过多阴影或密集 emoji。',
+      description: '整体替换正文内容。默认输出有编辑设计感的公众号文章排版，优先使用标题、小标题、段落、留白、图片引导和少量强调块来建立层次，不要海报式大标题区、渐变卡片墙、过多阴影或密集 emoji。若上下文提供参考模板，必须继承模板视觉语言并落地至少 3 处可见设计模块。',
       parameters: {
         type: 'object',
         properties: {
           html: {
             type: 'string',
-            description: '新的正文 HTML。适合微信文章阅读，结构清晰，样式克制；除非用户明确要求，否则不要使用大面积居中、渐变背景、装饰分割线或复杂多列卡片。',
+            description: '新的正文 HTML。适合微信文章阅读，结构清晰且有轻度设计感；可以少量使用深浅块面、实色信息框、图注式小标题或克制的标题居中，但除非用户明确要求，否则不要使用大面积渐变、阴影、装饰分割线或复杂多列卡片。若有模板参考，请至少体现 3 处模板中的版式特征。',
           },
         },
         required: ['html'],
@@ -28,13 +28,13 @@ const TOOLS = {
     type: 'function',
     function: {
       name: 'insert_content',
-      description: '在正文中插入一段补充内容。默认保持与上下文一致的文章风格，适合插入导语、过渡段、结尾或列表，不要生成整页海报式模块。',
+      description: '在正文中插入一段补充内容。默认保持与上下文一致的文章风格和设计语言，适合插入导语、过渡段、结尾、图片说明或小型强调块，不要生成整页海报式模块。若上下文包含模板风格，请沿用该风格。',
       parameters: {
         type: 'object',
         properties: {
           html: {
             type: 'string',
-            description: '要插入的 HTML 片段。优先生成自然的段落、小标题、列表等正文片段，保持样式简洁。',
+            description: '要插入的 HTML 片段。优先生成自然的段落、小标题、列表、引用或小型强调块，保持文章式设计感，而不是孤立的大卡片。',
           },
           position: {
             type: 'string',

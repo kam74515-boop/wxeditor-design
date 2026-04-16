@@ -1,6 +1,9 @@
 /**
- * Seed: 5个基础模板
+ * Seed: 基础模板
  */
+
+const { createTemplateDefinition } = require('../src/templates/pioneerEditorialTemplate');
+const { createTemplateDefinition: createPioneerCodeTemplateDefinition } = require('../src/templates/pioneerCodeTemplate');
 
 const basicTemplates = [
   {
@@ -87,6 +90,8 @@ const basicTemplates = [
     is_public: 1,
     status: 'active',
   },
+  createTemplateDefinition(),
+  createPioneerCodeTemplateDefinition(),
 ];
 
 exports.seed = async function (knex) {
@@ -96,9 +101,9 @@ exports.seed = async function (knex) {
   for (const tpl of basicTemplates) {
     await knex('templates').insert({
       ...tpl,
-      preview_image: '',
-      use_count: 0,
-      author_id: null,
+      preview_image: tpl.preview_image || '',
+      use_count: tpl.use_count || 0,
+      author_id: tpl.author_id || null,
     });
   }
 

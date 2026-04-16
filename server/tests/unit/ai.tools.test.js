@@ -19,7 +19,7 @@ describe('ai/tools', () => {
 
     expect(parsed.tool).toBe('replace_editor_content');
     expect(parsed.args.html).toContain('<section style=');
-    expect(parsed.args.html).toContain('<p style="font-size: 15px; line-height: 1.75; color: #333333; margin-bottom: 1em; text-align: left;">hello</p>');
+    expect(parsed.args.html).toContain('<p style="font-size: 15px; line-height: 1.75; color: inherit; margin-bottom: 1em; text-align: left;">hello</p>');
   });
 
   it('should keep insert position while normalizing html', () => {
@@ -32,7 +32,7 @@ describe('ai/tools', () => {
 
     expect(parsed.tool).toBe('insert_content');
     expect(parsed.args.position).toBe('end');
-    expect(parsed.args.html).toContain('<p style="font-size: 15px; line-height: 1.75; color: #333333; margin-bottom: 1em; text-align: left;">hello</p>');
+    expect(parsed.args.html).toContain('<p style="font-size: 15px; line-height: 1.75; color: inherit; margin-bottom: 1em; text-align: left;">hello</p>');
     expect(parsed.args.html).not.toContain('<section style=');
   });
 
@@ -49,6 +49,24 @@ describe('ai/tools', () => {
     expect(parsed.args.html).not.toContain('linear-gradient');
     expect(parsed.args.html).not.toContain('box-shadow');
     expect(parsed.args.html).not.toContain('display:flex');
-    expect(parsed.args.html).toContain('text-align: left;');
+    expect(parsed.args.html).not.toContain('font-size: 24px;');
+    expect(parsed.args.html).toContain('text-align: center;');
+  });
+
+  it('should preserve restrained design blocks while removing flashy poster styles', () => {
+    const parsed = parseToolCall({
+      function: {
+        name: 'replace_editor_content',
+        arguments: JSON.stringify({
+          html: '<section style="background:#111111;color:#ffffff;padding:30px 16px;border-radius:18px;"><p style="margin:0 0 8px;font-size:13px;font-weight:700;letter-spacing:0.5px;">栏目提示</p><h2 style="text-align:center;color:#ffffff;">带一点设计感的正文</h2></section>',
+        }),
+      },
+    });
+
+    expect(parsed.args.html).toContain('background-color: #111111;');
+    expect(parsed.args.html).toContain('padding: 30px 16px;');
+    expect(parsed.args.html).toContain('border-radius: 18px;');
+    expect(parsed.args.html).toContain('letter-spacing: 0.5px;');
+    expect(parsed.args.html).toContain('text-align: center;');
   });
 });

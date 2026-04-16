@@ -116,6 +116,25 @@ describe('AiModelCatalogService', () => {
     });
   });
 
+  it('surfaces a friendly message when provider does not support /models', async () => {
+    axios.get.mockRejectedValue({
+      response: {
+        status: 405,
+      },
+    });
+
+    await expect(
+      AiModelCatalogService.fetchRemoteCatalog({
+        api_key: 'sk-test',
+        base_url: 'https://api.example.com/v1',
+        model: 'fallback-model',
+      })
+    ).rejects.toMatchObject({
+      statusCode: 400,
+      message: '当前供应商未提供可用的 /models 接口，请手动添加要开放给前端的模型',
+    });
+  });
+
   it('rejects hidden models when frontend requests them', async () => {
     db.mockImplementation(() => ({
       whereIn: jest.fn().mockReturnThis(),

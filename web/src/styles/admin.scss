@@ -7,11 +7,12 @@
 // 管理后台整体布局
 .admin-layout {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
   background: $layout-light-bg;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   padding: $page-padding;
   gap: $block-gap;
+  overflow: hidden;
 }
 
 // 深色侧边栏
@@ -406,4 +407,109 @@
   &--vip { background: #FEF3C7; color: #D97706; }
   &--user { background: #F0F3F8; color: rgba(0,0,0,0.5); }
   &--superadmin { background: #EDE9FE; color: #7C3AED; }
+}
+
+// 内联模型切换按钮
+.ai-model-count-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background 150ms ease;
+  
+  &:hover {
+    background: rgba(0, 0, 0, 0.04);
+  }
+  
+  &--active {
+    background: rgba(0, 0, 0, 0.06);
+  }
+  
+  &__icon {
+    transition: transform 200ms ease;
+  }
+  
+  &--active &__icon {
+    transform: rotate(180deg);
+  }
+}
+
+// 内联模型切换面板
+.ai-model-panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 8px;
+  min-width: 320px;
+  max-width: 400px;
+  background: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  z-index: 100;
+  overflow: hidden;
+  
+  &__loading,
+  &__empty {
+    padding: 20px;
+    text-align: center;
+    font-size: 13px;
+    color: rgba(0, 0, 0, 0.45);
+  }
+  
+  &__list {
+    max-height: 280px;
+    overflow-y: auto;
+  }
+  
+  &__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+    transition: background 150ms ease;
+    
+    &:last-child {
+      border-bottom: none;
+    }
+    
+    &:hover {
+      background: rgba(0, 0, 0, 0.02);
+    }
+  }
+  
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+    margin-right: 12px;
+  }
+  
+  &__name {
+    font-size: 13px;
+    font-weight: 600;
+    color: $layout-sider-dark;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  &__id {
+    font-size: 11px;
+    color: rgba(0, 0, 0, 0.4);
+    font-family: 'SF Mono', 'Consolas', monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+// 使 ai-config-card__info 成为相对定位容器
+.ai-config-card__info {
+  position: relative;
 }

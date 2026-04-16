@@ -27,7 +27,54 @@
         </nav>
 
         <div class="tab-content" :style="{ backgroundColor: activeTabColor }">
-          <div v-if="activeTab === 'ai'" class="ai-prompts-panel">
+          <div v-if="activeTab === 'templates'" class="editor-templates-panel">
+            <div class="editor-templates-header">
+              <span class="editor-templates-label">模版库</span>
+              <button class="editor-templates-refresh" :disabled="editorTemplatesLoading" @click="fetchEditorTemplates(true)">
+                {{ editorTemplatesLoading ? '加载中...' : '刷新' }}
+              </button>
+            </div>
+
+            <div class="editor-templates-search">
+              <input
+                v-model="editorTemplateSearch"
+                type="text"
+                class="editor-templates-search-input"
+                placeholder="搜索模板名称或风格..."
+                @input="handleEditorTemplateSearch"
+              />
+            </div>
+
+            <div v-if="editorTemplatesLoading" class="editor-templates-empty">
+              正在加载模板...
+            </div>
+            <div v-else-if="editorTemplates.length === 0" class="editor-templates-empty">
+              当前没有可用模板
+            </div>
+            <div v-else class="editor-template-list">
+              <article
+                v-for="template in editorTemplates"
+                :key="template.id"
+                class="editor-template-card"
+              >
+                <div class="editor-template-cover">
+                  <img v-if="template.preview_image" :src="template.preview_image" :alt="template.name" />
+                  <div v-else class="editor-template-cover-placeholder">模板</div>
+                </div>
+                <div class="editor-template-body">
+                  <div class="editor-template-meta">
+                    <span class="editor-template-category">{{ template.category || '通用' }}</span>
+                    <span class="editor-template-count">{{ template.use_count || 0 }} 次</span>
+                  </div>
+                  <h4 class="editor-template-title">{{ template.name }}</h4>
+                  <p class="editor-template-desc">{{ template.description || '官方精选模板，可直接应用到当前文章。' }}</p>
+                  <button class="editor-template-apply" @click="applyEditorTemplate(template)">设为AI参考模板</button>
+                </div>
+              </article>
+            </div>
+          </div>
+
+          <div v-else-if="activeTab === 'ai'" class="ai-prompts-panel">
             <div class="ai-prompts-header">
               <span class="ai-label"><svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor" style="vertical-align:-2px;margin-right:4px;"><path d="M10 2a6 6 0 0 0-6 6c0 2.2 1.2 4.1 3 5.1V15a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-1.9c1.8-1 3-2.9 3-5.1a6 6 0 0 0-6-6zm-1 15h2v1H9v-1z"/></svg>AI 快捷操作</span>
             </div>
@@ -289,8 +336,9 @@
         </div>
       </div>
 
-      <!-- 3.1 AI 助手区（完整交互面板） -->
-      <div class="right-ai-card">
+      <div class="ai-chat-shell">
+        <!-- 3.1 AI 助手区（完整交互面板） -->
+        <div class="right-ai-card">
         <div class="ai-panel-toolbar">
           <div class="ai-panel-title">
             <span>AI 助手</span>
@@ -303,6 +351,14 @@
           >
             {{ toolRunHistoryLoading && showToolRunReview ? '刷新中...' : '生成记录' }}
           </button>
+        </div>
+
+        <div v-if="selectedAgentTemplate" class="ai-template-context-bar">
+          <div class="ai-template-context-main">
+            <span class="ai-template-context-label">参考模板</span>
+            <span class="ai-template-context-name">{{ selectedAgentTemplate.name }}</span>
+          </div>
+          <button class="ai-template-context-clear" @click="clearSelectedAgentTemplate">清除</button>
         </div>
 
         <!-- 消息流 -->
@@ -349,61 +405,88 @@
           </div>
         </div>
 
+        </div>
+
+        <div class="ai-input-card">
         <!-- 附件预览 -->
         <div v-if="aiStore.attachedFile" class="ai-file-bar">
           <span><svg viewBox="0 0 20 20" width="12" height="12" fill="#2563eb" style="vertical-align:-1px;margin-right:3px;"><path d="M15.6 4.4a1.5 1.5 0 0 0-2.1 0L5 12.9V15h2.1l8.5-8.5a1.5 1.5 0 0 0 0-2.1zM3 17h14v1H3v-1z"/></svg> {{ aiStore.attachedFile.name }}</span>
           <button @click="aiStore.attachedFile = null"><el-icon><Close /></el-icon></button>
         </div>
 
-        <!-- 输入区 -->
-        <div class="ai-input">
-          <div class="ai-input-row">
-            <button class="attach-btn" @click="triggerFileInput" :disabled="aiStore.isLoading" title="上传文件"><svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor"><path d="M15.6 4.4a1.5 1.5 0 0 0-2.1 0L5 12.9V15h2.1l8.5-8.5a1.5 1.5 0 0 0 0-2.1zM3 17h14v1H3v-1z"/></svg></button>
-            <input
-              v-model="chatInput"
-              type="text"
-              placeholder="输入指令或上传文件..."
-              class="chat-input"
-              :disabled="aiStore.isLoading"
-              @keyup.enter="handleSendAI"
-              @keyup.esc="aiStore.stopGeneration()"
-              @paste="handlePaste"
-            />
-            <button v-if="aiStore.isLoading" class="stop-btn-round" @click="aiStore.stopGeneration()" title="停止生成">
-              <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><rect x="3" y="3" width="10" height="10" rx="2"/></svg>
-            </button>
-            <button v-else class="send-btn" :disabled="(!chatInput.trim() && !aiStore.attachedFile)" @click="handleSendAI">
-              <el-icon><Promotion /></el-icon>
-            </button>
+        <div class="chat-textarea-shell">
+          <textarea
+            ref="aiTextareaRef"
+            v-model="chatInput"
+            placeholder="请将您遇到的问题告诉我，使用 Shift + Enter 换行"
+            class="chat-textarea"
+            :disabled="aiStore.isLoading"
+            rows="3"
+            @keydown="handleAIInputKeydown"
+            @paste="handlePaste"
+          />
+
+          <div v-if="aiStore.availableModels.length" ref="aiModelMenuRef" class="ai-input-meta ai-input-meta--inside">
+            <div class="ai-input-tools">
+              <button class="attach-btn" @click="triggerFileInput" :disabled="aiStore.isLoading" title="上传文件">
+                <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor"><path d="M15.6 4.4a1.5 1.5 0 0 0-2.1 0L5 12.9V15h2.1l8.5-8.5a1.5 1.5 0 0 0 0-2.1zM3 17h14v1H3v-1z"/></svg>
+              </button>
+              <button
+                type="button"
+                class="ai-model-switch-btn"
+                :class="{ open: aiModelMenuOpen }"
+                :disabled="aiStore.isLoading || aiStore.availableModels.length <= 1"
+                :aria-label="`切换模型，当前为 ${selectedAIModelDisplayName}`"
+                @click="toggleAIModelMenu"
+              >
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M8 7h8" />
+                  <path d="M6 12h12" />
+                  <path d="M10 17h4" />
+                  <polyline points="15 4 18 7 15 10" />
+                </svg>
+                <span>{{ selectedAIModelDisplayName }}</span>
+              </button>
+            </div>
+            <div class="ai-input-submit">
+              <button v-if="aiStore.isLoading" class="stop-btn-round" @click="aiStore.stopGeneration()" title="停止生成">
+                <svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor"><rect x="3" y="3" width="10" height="10" rx="2"/></svg>
+              </button>
+              <button v-else class="send-btn" :disabled="(!chatInput.trim() && !aiStore.attachedFile)" @click="handleSendAI">
+                <el-icon><Promotion /></el-icon>
+              </button>
+            </div>
+            <div v-if="aiModelMenuOpen" class="ai-model-menu">
+              <button
+                v-for="model in aiStore.availableModels"
+                :key="model.id"
+                type="button"
+                class="ai-model-option"
+                :class="{ active: model.id === aiStore.selectedModel }"
+                @click="selectAIModel(model.id)"
+              >
+                <span>{{ model.display_name }}</span>
+              </button>
+            </div>
           </div>
-          <input ref="fileInputRef" type="file" accept=".pdf,.doc,.docx,.html,.htm,.txt,.md,.png,.jpg,.jpeg,.gif,.webp,.svg" style="display:none" @change="handleFileSelect" />
+
+          <div v-else class="ai-input-meta ai-input-meta--inside ai-input-meta--compact">
+            <div class="ai-input-tools">
+              <button class="attach-btn" @click="triggerFileInput" :disabled="aiStore.isLoading" title="上传文件">
+                <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor"><path d="M15.6 4.4a1.5 1.5 0 0 0-2.1 0L5 12.9V15h2.1l8.5-8.5a1.5 1.5 0 0 0 0-2.1zM3 17h14v1H3v-1z"/></svg>
+              </button>
+            </div>
+            <div class="ai-input-submit">
+              <button v-if="aiStore.isLoading" class="stop-btn-round" @click="aiStore.stopGeneration()" title="停止生成">
+                <svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor"><rect x="3" y="3" width="10" height="10" rx="2"/></svg>
+              </button>
+              <button v-else class="send-btn" :disabled="(!chatInput.trim() && !aiStore.attachedFile)" @click="handleSendAI">
+                <el-icon><Promotion /></el-icon>
+              </button>
+            </div>
+          </div>
         </div>
-        <div v-if="aiStore.availableModels.length" ref="aiModelMenuRef" class="ai-input-meta">
-          <button
-            type="button"
-            class="ai-model-trigger"
-            :class="{ open: aiModelMenuOpen }"
-            :disabled="aiStore.isLoading || aiStore.availableModels.length <= 1"
-            @click="toggleAIModelMenu"
-          >
-            <span class="ai-model-trigger-text">{{ selectedAIModelDisplayName }}</span>
-            <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <polyline points="4 6 8 10 12 6" />
-            </svg>
-          </button>
-          <div v-if="aiModelMenuOpen" class="ai-model-menu">
-            <button
-              v-for="model in aiStore.availableModels"
-              :key="model.id"
-              type="button"
-              class="ai-model-option"
-              :class="{ active: model.id === aiStore.selectedModel }"
-              @click="selectAIModel(model.id)"
-            >
-              <span class="ai-model-option-provider">{{ aiStore.modelProviderLabel || '模型厂商' }}</span>
-              <span class="ai-model-option-name">{{ model.display_name }}</span>
-            </button>
-          </div>
+        <input ref="fileInputRef" type="file" accept=".pdf,.doc,.docx,.html,.htm,.txt,.md,.png,.jpg,.jpeg,.gif,.webp,.svg" style="display:none" @change="handleFileSelect" />
         </div>
       </div>
 
@@ -585,6 +668,7 @@ const editorRef = ref<HTMLElement | null>(null);
 const toolbarAreaRef = ref<HTMLElement | null>(null);
 const articleTitle = ref(article.value.title || '');
 const chatInput = ref('');
+const aiTextareaRef = ref<HTMLTextAreaElement | null>(null);
 let ueditorInstance: UEditorInstance | null = null;
 
 // ---- 聊天历史管理 ----
@@ -605,12 +689,34 @@ interface ToolRunItem {
   created_at?: string;
 }
 
+interface EditorTemplateItem {
+  id: number;
+  name: string;
+  description?: string;
+  category?: string;
+  content: string;
+  preview_image?: string;
+  use_count?: number;
+}
+
+interface AgentTemplateContext {
+  id: number;
+  name: string;
+  description?: string;
+  content: string;
+}
+
 const showChatHistory = ref(false);
 const chatHistoryList = ref<ChatHistoryItem[]>([]);
 const showToolRunReview = ref(false);
 const toolRunHistoryList = ref<ToolRunItem[]>([]);
 const toolRunHistoryLoading = ref(false);
 const toolRunHistoryError = ref('');
+const editorTemplates = ref<EditorTemplateItem[]>([]);
+const editorTemplatesLoading = ref(false);
+const editorTemplateSearch = ref('');
+let editorTemplateSearchTimer: ReturnType<typeof setTimeout> | null = null;
+const selectedAgentTemplate = ref<AgentTemplateContext | null>(null);
 
 // 从 localStorage 加载历史记录
 function loadChatHistoryFromStorage() {
@@ -697,6 +803,64 @@ const tabColors: Record<string, string> = {
   ai: '#FBCFE8'
 };
 const activeTabColor = computed(() => tabColors[activeTab.value]);
+
+async function fetchEditorTemplates(force = false) {
+  if (editorTemplatesLoading.value) return;
+  if (!force && editorTemplates.value.length > 0 && !editorTemplateSearch.value.trim()) return;
+
+  editorTemplatesLoading.value = true;
+  try {
+    const params = new URLSearchParams({
+      page: '1',
+      limit: '20',
+    });
+
+    const keyword = editorTemplateSearch.value.trim();
+    if (keyword) params.set('search', keyword);
+
+    const res: any = await http.get(`/templates?${params.toString()}`);
+    if (res.success) {
+      editorTemplates.value = Array.isArray(res.data?.list) ? res.data.list : [];
+    } else {
+      editorTemplates.value = [];
+    }
+  } catch (error) {
+    console.error('获取编辑器模板失败:', error);
+    editorTemplates.value = [];
+  } finally {
+    editorTemplatesLoading.value = false;
+  }
+}
+
+function handleEditorTemplateSearch() {
+  if (editorTemplateSearchTimer) clearTimeout(editorTemplateSearchTimer);
+  editorTemplateSearchTimer = setTimeout(() => {
+    fetchEditorTemplates(true);
+  }, 250);
+}
+
+async function applyEditorTemplate(template: EditorTemplateItem) {
+  selectedAgentTemplate.value = {
+    id: template.id,
+    name: template.name,
+    description: template.description,
+    content: template.content,
+  };
+  activeTab.value = 'ai';
+
+  try {
+    await http.post(`/templates/${template.id}/use`);
+  } catch (error) {
+    console.error('更新模板使用次数失败:', error);
+  }
+
+  ElMessage.success(`已将「${template.name}」设为 AI 参考模板，请在右侧输入你的生成需求`);
+}
+
+function clearSelectedAgentTemplate() {
+  selectedAgentTemplate.value = null;
+  ElMessage.success('已清除 AI 参考模板');
+}
 
 function formatTime(date: Date | null | string): string {
   if (!date) return '';
@@ -805,6 +969,7 @@ function setEditorContentRaw(content: string) {
 
 async function loadOrCreateDocument() {
   debouncedSave.cancel();
+  selectedAgentTemplate.value = null;
   if (editorStore.hasUnsavedChanges && editorStore.currentProject?.id) {
     try { await editorStore.save(); } catch {}
   }
@@ -865,6 +1030,9 @@ async function loadOrCreateDocument() {
 onMounted(async () => {
   document.addEventListener('pointerdown', handleAIModelClickOutside);
   aiStore.loadAvailableModels();
+  if (activeTab.value === 'templates') {
+    fetchEditorTemplates(true);
+  }
 
   // 如果 URL 没有 documentId，说明要新建文档，先清掉持久化残留内容
   const hasDocumentId = !!route.params.documentId;
@@ -988,6 +1156,12 @@ watch(() => route.params.documentId, (newId, oldId) => {
   }
 });
 
+watch(activeTab, (tab) => {
+  if (tab === 'templates') {
+    fetchEditorTemplates();
+  }
+});
+
 // 监听标题变化
 watch(articleTitle, (newTitle) => {
   editorStore.setTitle(newTitle);
@@ -997,6 +1171,10 @@ watch(articleTitle, (newTitle) => {
 onBeforeUnmount(() => {
   // 销毁自动保存定时器和事件监听
   editorStore.teardownAutoSave();
+  if (editorTemplateSearchTimer) {
+    clearTimeout(editorTemplateSearchTimer);
+    editorTemplateSearchTimer = null;
+  }
   if (ueditorInstance) {
     destroyUEditor('ueditor-container');
   }
@@ -1084,6 +1262,18 @@ function handleAIModelClickOutside(event: PointerEvent) {
   }
 }
 
+function handleAIInputKeydown(event: KeyboardEvent) {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault();
+    handleSendAI();
+    return;
+  }
+
+  if (event.key === 'Escape') {
+    aiStore.stopGeneration();
+  }
+}
+
 // AI 发送消息（右侧聊天面板，支持附件）
 function handleSendAI() {
   const text = chatInput.value.trim();
@@ -1096,7 +1286,13 @@ function handleSendAI() {
   const editorContent = ueditorInstance?.getContent?.() || '';
   const prompt = text || '请分析并处理这个文件的内容，将其排版后写入编辑器';
   const docId = currentProject.value?.id || editorStore.currentProject?.id;
-  aiStore.sendMessage(prompt, editorContent, file || undefined, docId);
+  aiStore.sendMessage(
+    prompt,
+    editorContent,
+    file || undefined,
+    docId,
+    selectedAgentTemplate.value || undefined
+  );
   aiStore.attachedFile = null;
 }
 
@@ -1104,7 +1300,12 @@ function handleSendAI() {
 function handleAIQuickPrompt(tpl: PromptTemplate) {
   const content = ueditorInstance?.getContent?.() || article.value.content || '';
   const docId = currentProject.value?.id || editorStore.currentProject?.id;
-  aiStore.sendQuickPrompt(tpl, content, docId);
+  aiStore.sendQuickPrompt(
+    tpl,
+    content,
+    docId,
+    selectedAgentTemplate.value || undefined
+  );
 }
 
 // 文件上传相关
@@ -1282,6 +1483,8 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  min-height: 0;
+  overflow: hidden;
   gap: 8px; /* 恢复紧密布局间距 */
   
   .sider-block {
@@ -1300,6 +1503,7 @@ onBeforeUnmount(() => {
     display: flex;
     align-items: center;
     height: 52px;
+    flex-shrink: 0;
     padding: 10px 8px;
     gap: 8px;
     background: #FFEFA3;
@@ -1353,6 +1557,7 @@ onBeforeUnmount(() => {
     flex: 1;
     display: flex;
     flex-direction: column;
+    min-height: 0;
     box-shadow: none; /* 让边框阴影落在内层 */
     border-radius: 0; /* 标签组容器不加额外圆角 */
     background: transparent;
@@ -1393,10 +1598,13 @@ onBeforeUnmount(() => {
 
     .tab-content {
       flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
       padding: 24px 16px;
       border-radius: 0; /* 下边不使用圆角 */
       box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-      overflow-y: auto;
+      overflow: hidden;
       transition: background-color 0.3s ease;
       position: relative;
       
@@ -1407,12 +1615,189 @@ onBeforeUnmount(() => {
         font-weight: 600;
       }
 
+      .editor-templates-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        height: 100%;
+        min-height: 0;
+
+        .editor-templates-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+
+          .editor-templates-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: rgba(0,0,0,0.72);
+          }
+
+          .editor-templates-refresh {
+            border: none;
+            background: rgba(255,255,255,0.72);
+            color: rgba(0,0,0,0.58);
+            font-size: 0.74rem;
+            font-weight: 700;
+            padding: 6px 10px;
+            border-radius: 999px;
+            cursor: pointer;
+
+            &:disabled {
+              cursor: not-allowed;
+              opacity: 0.55;
+            }
+          }
+        }
+
+        .editor-templates-search-input {
+          width: 100%;
+          border: 1px solid rgba(0,0,0,0.08);
+          background: rgba(255,255,255,0.7);
+          border-radius: 10px;
+          padding: 10px 12px;
+          font-size: 0.82rem;
+          color: rgba(0,0,0,0.76);
+          outline: none;
+
+          &::placeholder {
+            color: rgba(0,0,0,0.35);
+          }
+
+          &:focus {
+            background: rgba(255,255,255,0.92);
+            border-color: rgba(0,0,0,0.16);
+          }
+        }
+
+        .editor-templates-empty {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 120px;
+          border-radius: 12px;
+          background: rgba(255,255,255,0.5);
+          color: rgba(0,0,0,0.45);
+          font-size: 0.82rem;
+          text-align: center;
+          padding: 16px;
+        }
+
+        .editor-template-list {
+          flex: 1;
+          min-height: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          overflow-y: auto;
+          padding-right: 2px;
+        }
+
+        .editor-template-card {
+          display: grid;
+          grid-template-columns: 88px 1fr;
+          gap: 10px;
+          padding: 10px;
+          border-radius: 14px;
+          background: rgba(255,255,255,0.72);
+          border: 1px solid rgba(0,0,0,0.06);
+        }
+
+        .editor-template-cover {
+          width: 88px;
+          height: 104px;
+          border-radius: 10px;
+          overflow: hidden;
+          background: rgba(0,0,0,0.06);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+          }
+        }
+
+        .editor-template-cover-placeholder {
+          font-size: 0.78rem;
+          font-weight: 700;
+          color: rgba(0,0,0,0.3);
+        }
+
+        .editor-template-body {
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .editor-template-meta {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          font-size: 0.7rem;
+        }
+
+        .editor-template-category {
+          display: inline-flex;
+          align-items: center;
+          padding: 2px 8px;
+          border-radius: 999px;
+          background: rgba(255,255,255,0.88);
+          color: rgba(0,0,0,0.58);
+          font-weight: 700;
+        }
+
+        .editor-template-count {
+          color: rgba(0,0,0,0.36);
+          font-weight: 600;
+        }
+
+        .editor-template-title {
+          margin: 0;
+          font-size: 0.92rem;
+          line-height: 1.35;
+          font-weight: 800;
+          color: rgba(0,0,0,0.78);
+        }
+
+        .editor-template-desc {
+          margin: 0;
+          font-size: 0.76rem;
+          line-height: 1.55;
+          color: rgba(0,0,0,0.52);
+          display: -webkit-box;
+          -webkit-line-clamp: 3;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+
+        .editor-template-apply {
+          margin-top: auto;
+          align-self: flex-start;
+          border: none;
+          border-radius: 999px;
+          background: rgba(0,0,0,0.82);
+          color: #fff;
+          font-size: 0.74rem;
+          font-weight: 700;
+          padding: 8px 12px;
+          cursor: pointer;
+        }
+      }
+
       /* AI 预设提示词面板 */
       .ai-prompts-panel {
         display: flex;
         flex-direction: column;
         gap: 12px;
         height: 100%;
+        min-height: 0;
 
         .ai-prompts-header {
           display: flex;
@@ -1649,6 +2034,7 @@ onBeforeUnmount(() => {
     padding: 16px;
     display: flex;
     flex-direction: column;
+    flex-shrink: 0;
     gap: 12px;
     border-radius: 0 0 12px 12px;
     background: #FFEFA3;
@@ -1796,12 +2182,12 @@ onBeforeUnmount(() => {
     position: relative !important;
   }
 
-  /* 工具栏按钮Hover状态同步标准 */
+  /* 工具栏按钮Hover状态同步 .action-icon-btn 标准 */
   :deep(.edui-default .edui-button-wrap:hover),
   :deep(.edui-default .edui-splitbutton-body:hover),
   :deep(.edui-default .edui-menubutton-body:hover),
   :deep(.edui-default .edui-combox-body:hover) {
-    background: rgba(0,0,0,0.06) !important; /* 匹配白底环境的最佳扁平高亮色 */
+    background: rgba(255,255,255,0.5) !important;
     color: rgba(0,0,0,0.9) !important;
     box-shadow: none !important;
   }
@@ -1930,6 +2316,17 @@ body .edui-default .edui-arrow {
   gap: 8px;
   flex-shrink: 0;
   min-height: 0;
+}
+
+.ai-chat-shell {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #FFEFA3;
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  overflow: hidden;
 }
 
 /* 3.0 独立操作栏 (扁平化无边框，收紧宽度) */
@@ -2275,7 +2672,7 @@ body .edui-default .edui-arrow {
 
 /* 3.1 AI 卡片 */
 .right-ai-card {
-  background: #FFEFA3;
+  background: transparent;
   border-radius: 12px 12px 0 0;
   display: flex;
   flex-direction: column;
@@ -2283,7 +2680,7 @@ body .edui-default .edui-arrow {
   flex: 1;
   min-height: 0;
   border: none;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+  box-shadow: none;
 
   .ai-panel-toolbar {
     display: flex;
@@ -2338,6 +2735,55 @@ body .edui-default .edui-arrow {
     }
   }
 
+  .ai-template-context-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.72);
+    border: 1px solid rgba(0,0,0,0.06);
+  }
+
+  .ai-template-context-main {
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .ai-template-context-label {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(0,0,0,0.45);
+    letter-spacing: 0.04em;
+  }
+
+  .ai-template-context-name {
+    min-width: 0;
+    font-size: 12px;
+    font-weight: 700;
+    color: #111827;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .ai-template-context-clear {
+    flex-shrink: 0;
+    border: none;
+    background: rgba(0,0,0,0.06);
+    color: rgba(0,0,0,0.6);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px 8px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+
 
   .ai-welcome {
     background: #ffffff;
@@ -2354,7 +2800,7 @@ body .edui-default .edui-arrow {
   .ai-content {
     flex: 1;
     overflow-y: auto;
-    padding: 8px 4px 8px 0; /* padding-right 4px 留出滚动条空间 */
+    padding: 8px 4px 12px 0; /* padding-right 4px 留出滚动条空间 */
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -2498,211 +2944,306 @@ body .edui-default .edui-arrow {
     }
   }
 
-  /* 附件预览条 */
-  .ai-file-bar {
+}
+
+.ai-input-card {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 8px;
+  box-shadow: none;
+  border-top: none;
+}
+
+.ai-input-card .ai-file-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 10px;
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 0;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.72);
+  margin: 0;
+
+  span {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 4px 12px;
-    background: rgba(59,130,246,0.08);
-    border: none;
-    border-radius: 8px;
-    font-size: 0.72rem;
-    color: #2563eb;
-    margin-top: 8px;
-    button {
-      background: none; border: none; cursor: pointer;
-      font-size: 0.75rem; color: #94a3b8;
-      &:hover { color: #ef4444; }
-    }
-  }
-
-  .ai-input {
-    display: block;
-    width: 100%;
-    background: #ffffff;
-    border-radius: 999px;
-    padding: 8px;
-    border: none;
-    margin-top: 10px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
-
-    .ai-input-row {
-      display: flex;
-      width: 100%;
-      box-sizing: border-box;
-      align-items: center;
-      gap: 8px;
-      min-height: 38px;
-      padding: 0 4px 0 4px;
-    }
-
-    .attach-btn {
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 1rem;
-      padding: 4px;
-      opacity: 0.5;
-      &:hover { opacity: 1; }
-      &:disabled { opacity: 0.3; cursor: not-allowed; }
-    }
-
-    .chat-input {
-      flex: 1;
-      min-width: 0;
-      border: none;
-      background: transparent;
-      outline: none;
-      font-size: 0.9rem;
-      font-weight: 500;
-      color: $layout-sider-dark;
-      &::placeholder { color: rgba(0,0,0,0.3); }
-    }
-    
-    .stop-btn-round {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      border: none;
-      background: #ef4444;
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s;
-      flex-shrink: 0;
-      &:hover { background: #dc2626; transform: scale(1.05); }
-    }
-
-    .send-btn {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: #FFD60A;
-      border: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: $layout-sider-dark;
-      cursor: pointer;
-      transition: transform 0.2s;
-      flex-shrink: 0;
-      &:hover { transform: scale(1.05); }
-      &:disabled { opacity: 0.4; cursor: not-allowed; }
-    }
-  }
-
-  .ai-input-meta {
-    position: relative;
-    display: flex;
-    justify-content: flex-start;
-    margin-top: 8px;
-    padding: 0 4px;
-  }
-
-  .ai-model-trigger {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    max-width: 100%;
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    background: rgba(255, 255, 255, 0.72);
-    border-radius: 999px;
-    padding: 6px 10px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #1a1a1a;
-    outline: none;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
-    cursor: pointer;
-    transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
-
-    svg {
-      flex-shrink: 0;
-      transition: transform 0.18s ease;
-    }
-
-    &.open svg {
-      transform: rotate(180deg);
-    }
-
-    &:hover:not(:disabled) {
-      background: rgba(255, 255, 255, 0.92);
-      border-color: rgba(0, 0, 0, 0.12);
-    }
-
-    &:disabled {
-      opacity: 0.7;
-      cursor: not-allowed;
-    }
-  }
-
-  .ai-model-trigger-text {
-    display: block;
     min-width: 0;
-    max-width: 180px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-weight: 500;
   }
 
-  .ai-model-menu {
-    position: absolute;
-    left: 8px;
-    top: calc(100% + 8px);
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    width: min(220px, calc(100% - 16px));
-    padding: 8px;
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.96);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
-    border: 1px solid rgba(0, 0, 0, 0.06);
-    backdrop-filter: blur(10px);
-    z-index: 3;
-  }
-
-  .ai-model-option {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid transparent;
-    border-radius: 12px;
-    background: rgba(249, 250, 251, 0.92);
-    text-align: left;
+  button {
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 0;
+    background: rgba(0, 0, 0, 0.06);
     cursor: pointer;
-    transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.45);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.16s ease, color 0.16s ease;
 
     &:hover {
-      background: #ffffff;
-      border-color: rgba(0, 0, 0, 0.08);
-      transform: translateY(-1px);
-    }
-
-    &.active {
-      background: #fff7cc;
-      border-color: rgba(255, 214, 10, 0.45);
+      background: rgba(239, 68, 68, 0.12);
+      color: #ef4444;
     }
   }
+}
 
-  .ai-model-option-provider {
-    font-size: 10px;
-    font-weight: 700;
-    color: rgba(0, 0, 0, 0.42);
-    letter-spacing: 0.02em;
+.ai-input-card .chat-textarea-shell {
+  width: 100%;
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 10px 12px 8px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: none;
+  box-sizing: border-box;
+  overflow: visible;
+  transition: border-color 0.16s ease;
+
+  &:focus-within {
+    border-color: rgba(0, 0, 0, 0.22);
+  }
+}
+
+.ai-input-card .chat-textarea {
+  width: 100%;
+  min-height: 52px;
+  max-height: 128px;
+  border: none;
+  background: transparent;
+  outline: none;
+  resize: none;
+  overflow-y: auto;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: #1D1D1F;
+  padding: 0;
+  margin: 0;
+  font-family: inherit;
+
+  &::placeholder {
+    color: rgba(0, 0, 0, 0.35);
+  }
+}
+
+.ai-input-card .ai-input-meta {
+  position: relative;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 0;
+  background: transparent;
+  border-top: none;
+}
+
+.ai-input-card .ai-input-meta--inside {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.ai-input-card .ai-input-meta--compact {
+  justify-content: space-between;
+}
+
+.ai-input-card .ai-input-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ai-input-card .ai-input-submit {
+  display: flex;
+  align-items: center;
+}
+
+.ai-input-card .attach-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: #ffffff;
+  cursor: pointer;
+  padding: 0;
+  color: rgba(0, 0, 0, 0.6);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+
+  &:hover:not(:disabled) {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.18);
+    color: #1D1D1F;
   }
 
-  .ai-model-option-name {
-    font-size: 12px;
-    font-weight: 700;
-    color: #1a1a1a;
-    line-height: 1.4;
+  &:disabled {
+    opacity: 0.42;
+    cursor: not-allowed;
+  }
+}
+
+.ai-input-card .ai-model-switch-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: #ffffff;
+  border-radius: 999px;
+  min-height: 32px;
+  padding: 0 12px;
+  color: rgba(0, 0, 0, 0.72);
+  font-size: 12px;
+  font-weight: 700;
+  outline: none;
+  box-shadow: none;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+  justify-content: center;
+
+  svg {
+    flex-shrink: 0;
+    width: 12px;
+    height: 12px;
+    transition: transform 0.16s ease;
+  }
+
+  &.open {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.22);
+    color: #111827;
+  }
+
+  &:hover:not(:disabled) {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.18);
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.ai-input-card .stop-btn-round,
+.ai-input-card .send-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease;
+  flex-shrink: 0;
+}
+
+.ai-input-card .stop-btn-round {
+  background: #ef4444;
+  color: #ffffff;
+
+  &:hover {
+    background: #dc2626;
+  }
+}
+
+.ai-input-card .send-btn {
+  background: #1D1D1F;
+  color: #ffffff;
+
+  &:hover {
+    background: #111827;
+  }
+
+  &:disabled {
+    background: rgba(255, 255, 255, 0.58);
+    color: rgba(0, 0, 0, 0.3);
+    opacity: 1;
+    cursor: not-allowed;
+  }
+}
+
+.ai-input-card .send-btn .el-icon {
+  font-size: 13px;
+}
+
+.ai-input-card .ai-model-menu {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 6px);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: min(220px, calc(100% - 2px));
+  padding: 6px;
+  border-radius: 0;
+  background: #ffffff;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.14);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  z-index: 3;
+}
+
+.ai-input-card .ai-model-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  width: 100%;
+  padding: 7px 9px;
+  border: 1px solid transparent;
+  border-radius: 0;
+  background: #fff8db;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+
+  &:hover {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.12);
+  }
+
+  &.active {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.2);
+  }
+}
+
+.ai-input-card .ai-model-option-provider {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.45);
+  letter-spacing: 0.01em;
+}
+
+.ai-input-card .ai-model-option-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1D1D1F;
+  line-height: 1.4;
+}
+
+@media (max-width: 1180px) {
+  .ai-input-card .chat-textarea {
+    min-height: 44px;
   }
 }
 

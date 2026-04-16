@@ -26,7 +26,15 @@ export interface PromptTemplate {
 export interface FrontendAIModel {
   id: string;
   display_name: string;
+  provider_name?: string;
   is_default?: boolean;
+}
+
+export interface AITemplateContext {
+  id?: number | string;
+  name: string;
+  description?: string;
+  content: string;
 }
 
 export const promptTemplates: PromptTemplate[] = [
@@ -87,13 +95,19 @@ export const useAIStore = defineStore('ai', () => {
       const payload = response.data || {};
       const nextModels = Array.isArray(payload.models) ? payload.models : [];
       const validIds = new Set(nextModels.map((item: FrontendAIModel) => item.id));
-      const savedModelId = localStorage.getItem('ai-selected-model') || '';
-      const fallbackModelId = payload.default_model && validIds.has(payload.default_model)
-        ? payload.default_model
-        : nextModels[0]?.id || '';
 
       availableModels.value = nextModels;
-      modelProviderLabel.value = payload.provider_name || '';
+
+      // 优先从后端加载用户保存的模型偏好
+      let savedModelId = '';
+      try {
+        const prefRes: any = await http.get('/ai/model-preference');
+        savedModelId = prefRes.data?.model_id || '';
+      } catch {
+        savedModelId = localStorage.getItem('ai-selected-model') || '';
+      }
+
+      const fallbackModelId = nextModels[0]?.id || '';
       selectedModel.value = savedModelId && validIds.has(savedModelId) ? savedModelId : fallbackModelId;
 
       if (selectedModel.value) {
@@ -104,21 +118,32 @@ export const useAIStore = defineStore('ai', () => {
     } catch {
       availableModels.value = [];
       selectedModel.value = '';
-      modelProviderLabel.value = '';
     }
   };
 
-  const setSelectedModel = (modelId: string) => {
+  const setSelectedModel = async (modelId: string) => {
     selectedModel.value = modelId;
     if (modelId) {
       localStorage.setItem('ai-selected-model', modelId);
+      // 同步保存到后端
+      try {
+        await http.put('/ai/model-preference', { model_id: modelId });
+      } catch {
+        // 忽略保存失败
+      }
     } else {
       localStorage.removeItem('ai-selected-model');
     }
   };
 
   // 通过 SSE 流式发送消息（支持可选文件附件）
-  const sendMessage = async (content: string, context?: string, file?: File, documentId?: string) => {
+  const sendMessage = async (
+    content: string,
+    context?: string,
+    file?: File,
+    documentId?: string,
+    templateContext?: AITemplateContext
+  ) => {
     // 显示用户消息（含附件提示）
     const displayContent = file
       ? `[附件] ${file.name}\n${content}`
@@ -166,6 +191,9 @@ export const useAIStore = defineStore('ai', () => {
         formData.append('message', content);
         if (context) formData.append('context', context);
         if (documentId) formData.append('documentId', documentId);
+        if (templateContext?.name) formData.append('templateName', templateContext.name);
+        if (templateContext?.description) formData.append('templateDescription', templateContext.description);
+        if (templateContext?.content) formData.append('templateContent', templateContext.content.substring(0, 12000));
         formData.append('history', JSON.stringify(history));
         if (selectedModel.value) formData.append('model', selectedModel.value);
         formData.append('file', file);
@@ -176,6 +204,9 @@ export const useAIStore = defineStore('ai', () => {
           message: content,
           context,
           documentId,
+          ...(templateContext?.name ? { templateName: templateContext.name } : {}),
+          ...(templateContext?.description ? { templateDescription: templateContext.description } : {}),
+          ...(templateContext?.content ? { templateContent: templateContext.content.substring(0, 12000) } : {}),
           history: JSON.stringify(history),
           ...(selectedModel.value ? { model: selectedModel.value } : {}),
         });
@@ -359,7 +390,12 @@ export const useAIStore = defineStore('ai', () => {
   }
 
   // 快捷提示词发送
-  const sendQuickPrompt = async (template: PromptTemplate, articleContent?: string, documentId?: string) => {
+  const sendQuickPrompt = async (
+    template: PromptTemplate,
+    articleContent?: string,
+    documentId?: string,
+    templateContext?: AITemplateContext
+  ) => {
     let fullPrompt = template.prompt;
     if (template.needsContent && articleContent) {
       const truncated = articleContent.replace(/<[^>]*>/g, '').substring(0, 3000);
@@ -367,7 +403,7 @@ export const useAIStore = defineStore('ai', () => {
     } else if (template.needsContent && !articleContent) {
       fullPrompt += '\n\n（当前文章暂无内容，请先输入一些文字）';
     }
-    await sendMessage(fullPrompt, articleContent, undefined, documentId);
+    await sendMessage(fullPrompt, articleContent, undefined, documentId, templateContext);
   };
 
   const togglePanel = () => {

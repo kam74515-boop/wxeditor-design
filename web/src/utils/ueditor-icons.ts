@@ -117,10 +117,6 @@ export function injectLucideIcons(editor: UEditorInstance) {
       fsIcon.style.display = 'flex'; fsIcon.style.alignItems = 'center'; fsIcon.style.justifyContent = 'center';
     }
     
-    // 给所有 SVG 赋予统一的灰色主调色，并保证继承颜色（防止黑压压一片）
-    const allSvgs = toolbar.querySelectorAll('.edui-icon svg');
-    allSvgs.forEach(svg => {
-      (svg as HTMLElement).style.color = '#4b5563'; // Tailwind 灰 600，沉稳扁平风
-    });
+    // SVG 颜色由 CSS 控制（hover/active/checked 状态），不在 JS 中设置
   }, 300);
 }

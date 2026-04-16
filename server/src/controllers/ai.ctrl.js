@@ -18,13 +18,19 @@ const AiToolRunService = require('../services/aiToolRun.service');
 const router = express.Router();
 const upload = multer({ dest: 'tmp/' });
 
-function buildChatMessages(message, context, history) {
+function buildChatMessages(message, context, history, templateInfo = {}) {
   const promptDef = getPrompt('editorChat');
   if (!promptDef) {
     throw Object.assign(new Error('编辑器主链路 prompt 未配置'), { statusCode: 500 });
   }
 
-  return createChatMessages(promptDef, { message, context }, history);
+  const params = { message, context };
+
+  if (templateInfo.templateName) params.templateName = templateInfo.templateName;
+  if (templateInfo.templateDescription) params.templateDescription = templateInfo.templateDescription;
+  if (templateInfo.templateContent) params.templateContent = templateInfo.templateContent;
+
+  return createChatMessages(promptDef, params, history);
 }
 
 router.post('/chat', auth, upload.single('file'), async (req, res) => {
@@ -32,7 +38,16 @@ router.post('/chat', auth, upload.single('file'), async (req, res) => {
   res.setTimeout(0);
 
   try {
-    const { message, documentId, context, history: historyRaw, model: requestedModel } = req.body;
+    const {
+      message,
+      documentId,
+      context,
+      history: historyRaw,
+      model: requestedModel,
+      templateName,
+      templateDescription,
+      templateContent,
+    } = req.body;
     let history = [];
     if (historyRaw) { try { history = JSON.parse(historyRaw); } catch {} }
 
@@ -45,17 +60,24 @@ router.post('/chat', auth, upload.single('file'), async (req, res) => {
     if (!Array.isArray(history)) history = [];
     history = history.filter(h => h && typeof h.role === 'string' && typeof h.content === 'string').slice(-20);
 
-    const config = await getActiveConfig();
+    const config = await AiModelCatalogService.resolveConfigForModel(requestedModel);
     if (!config) return res.status(500).json({ success: false, message: '未配置 AI 服务' });
-    const model = await AiModelCatalogService.resolveRequestedModel(config, requestedModel, {
-      requireVisible: true,
-    });
+    const model = requestedModel || config.model;
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    const messages = buildChatMessages(message, context, history);
+    const messages = buildChatMessages(
+      message,
+      context,
+      history,
+      {
+        templateName,
+        templateDescription,
+        templateContent: typeof templateContent === 'string' ? templateContent.substring(0, 12000) : undefined,
+      }
+    );
     const tools = getToolDefinitions();
 
     const stream = await axios({
@@ -113,24 +135,19 @@ router.post('/chat', auth, upload.single('file'), async (req, res) => {
 
 router.get('/models', auth, async (_req, res) => {
   try {
-    const config = await getActiveConfig();
-    if (!config) return res.status(500).json({ success: false, message: '未配置 AI 服务' });
-
-    const models = await AiModelCatalogService.getFrontendModels(config);
-    const defaultModel = await AiModelCatalogService.getCatalogForConfig(config);
-    const defaultModelEntry = defaultModel.find((item) => item.id === config.model);
+    const allModels = await AiModelCatalogService.getAllFrontendModels();
+    if (!allModels.length) {
+      return res.status(500).json({ success: false, message: '未配置可用模型' });
+    }
 
     res.json({
       success: true,
       data: {
-        provider: config.provider,
-        provider_name: config.name || config.provider,
-        default_model: config.model,
-        default_model_display_name: defaultModelEntry?.display_name || config.model,
-        models: models.map((model) => ({
-          id: model.id,
-          display_name: model.display_name,
-          is_default: model.id === config.model,
+        models: allModels.map((m) => ({
+          id: m.id,
+          display_name: m.display_name,
+          provider_name: m.provider_name,
+          is_default: m.is_default,
         })),
       },
     });
@@ -144,11 +161,9 @@ router.post('/rewrite', auth, async (req, res) => {
     const { content, action, customPrompt, model: requestedModel } = req.body;
     if (!content || !action) return res.status(400).json({ success: false, message: '缺少必要参数' });
 
-    const config = await getActiveConfig();
+    const config = await AiModelCatalogService.resolveConfigForModel(requestedModel);
     if (!config) return res.status(500).json({ success: false, message: '未配置 AI 服务' });
-    const model = await AiModelCatalogService.resolveRequestedModel(config, requestedModel, {
-      requireVisible: true,
-    });
+    const model = requestedModel || config.model;
 
     const prompts = {
       polish: '请润色以下内容，保持原意但让表达更流畅、专业：',
@@ -202,6 +217,44 @@ router.get('/history/:documentId/tool-runs', auth, async (req, res) => {
     const limit = Math.min(Math.max(Number(req.query.limit) || 20, 1), 100);
     const runs = await AiToolRunService.listRuns(req.params.documentId, req.userId, { limit });
     res.json({ success: true, data: runs });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 保存用户选择的模型
+router.put('/model-preference', auth, async (req, res) => {
+  try {
+    const { model_id } = req.body;
+    if (!model_id) {
+      return res.status(400).json({ success: false, message: 'model_id 不能为空' });
+    }
+
+    const user = await db('users').where({ id: req.userId }).first();
+    if (!user) {
+      return res.status(404).json({ success: false, message: '用户不存在' });
+    }
+
+    const settings = user.settings ? JSON.parse(user.settings) : {};
+    settings.ai_selected_model = model_id;
+    await db('users').where({ id: req.userId }).update({ settings: JSON.stringify(settings) });
+
+    res.json({ success: true, message: '模型偏好已保存' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 获取用户选择的模型
+router.get('/model-preference', auth, async (req, res) => {
+  try {
+    const user = await db('users').where({ id: req.userId }).first();
+    if (!user) {
+      return res.status(404).json({ success: false, message: '用户不存在' });
+    }
+
+    const settings = user.settings ? JSON.parse(user.settings) : {};
+    res.json({ success: true, data: { model_id: settings.ai_selected_model || null } });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

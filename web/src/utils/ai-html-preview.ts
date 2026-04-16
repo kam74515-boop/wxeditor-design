@@ -11,14 +11,14 @@ const BLOCK_STYLE = serializeStyle({
   'box-sizing': 'border-box',
   'font-size': `${DEFAULTS.fontSize}px`,
   'line-height': String(DEFAULTS.lineHeight),
-  color: DEFAULTS.color,
+  color: 'inherit',
   'margin-bottom': DEFAULTS.paragraphSpacing,
 });
 
 const PARAGRAPH_STYLE = serializeStyle({
   'font-size': `${DEFAULTS.fontSize}px`,
   'line-height': String(DEFAULTS.lineHeight),
-  color: DEFAULTS.color,
+  color: 'inherit',
   'margin-bottom': DEFAULTS.paragraphSpacing,
   'text-align': 'left',
 });
@@ -173,7 +173,9 @@ function normalizeSpanStyle(styleText: string) {
     ...pickBackgroundDecoration(styleMap),
     ...(normalizeColor(styleMap.color) ? { color: normalizeColor(styleMap.color)! } : {}),
     ...(normalizeRadius(styleMap['border-radius']) ? { 'border-radius': normalizeRadius(styleMap['border-radius'])! } : {}),
-    ...(normalizeSpacing(styleMap.padding) ? { padding: normalizeSpacing(styleMap.padding)! } : {}),
+    ...(normalizeBoxSpacing(styleMap.padding) ? { padding: normalizeBoxSpacing(styleMap.padding)! } : {}),
+    ...(normalizeFontSize(styleMap['font-size'], { min: 12, max: 18 }) ? { 'font-size': normalizeFontSize(styleMap['font-size'], { min: 12, max: 18 })! } : {}),
+    ...(normalizeLetterSpacing(styleMap['letter-spacing']) ? { 'letter-spacing': normalizeLetterSpacing(styleMap['letter-spacing'])! } : {}),
   });
 }
 
@@ -195,7 +197,13 @@ function buildPreviewStyle(tag: string, styleText: string) {
     case 'p':
       return serializeStyle({
         ...parseStyleText(PARAGRAPH_STYLE),
+        'font-size': normalizeFontSize(styleMap['font-size'], { min: 12, max: 18 }) || `${DEFAULTS.fontSize}px`,
+        color: normalizeColor(styleMap.color) || 'inherit',
+        ...(normalizeBoxSpacing(styleMap.margin) ? { margin: normalizeBoxSpacing(styleMap.margin)! } : {}),
         'text-align': normalizeTextAlign(styleMap['text-align']) || 'left',
+        ...(normalizeLetterSpacing(styleMap['letter-spacing']) ? { 'letter-spacing': normalizeLetterSpacing(styleMap['letter-spacing'])! } : {}),
+        ...pickBlockDecorations(styleMap),
+        ...pickInlineStyles(styleMap),
       });
     case 'h1':
       return buildHeadingStyle(8, styleMap);
@@ -245,7 +253,7 @@ function buildPreviewStyle(tag: string, styleText: string) {
     case 'b':
       return serializeStyle({
         'font-weight': '700',
-        color: normalizeColor(styleMap.color) || DEFAULTS.headingColor,
+        color: normalizeColor(styleMap.color) || 'inherit',
       });
     case 'em':
     case 'i':
@@ -263,7 +271,7 @@ function buildPreviewStyle(tag: string, styleText: string) {
         'max-width': '100%',
         width: '100%',
         height: 'auto',
-        margin: '1em auto',
+        ...(normalizeBoxSpacing(styleMap.margin) ? { margin: normalizeBoxSpacing(styleMap.margin)! } : { margin: '1em auto' }),
         ...(normalizeRadius(styleMap['border-radius']) ? { 'border-radius': normalizeRadius(styleMap['border-radius'])! } : {}),
       });
     case 'table':
@@ -279,7 +287,7 @@ function buildPreviewStyle(tag: string, styleText: string) {
         padding: '8px',
         'font-size': `${DEFAULTS.fontSize}px`,
         'line-height': String(DEFAULTS.lineHeight),
-        color: normalizeColor(styleMap.color) || DEFAULTS.color,
+        color: normalizeColor(styleMap.color) || 'inherit',
         ...pickBackgroundDecoration(styleMap),
       });
     default:
@@ -289,13 +297,16 @@ function buildPreviewStyle(tag: string, styleText: string) {
 
 function buildHeadingStyle(sizeOffset: number, styleMap: Record<string, string>) {
   return serializeStyle({
-    'font-size': `${DEFAULTS.fontSize + sizeOffset}px`,
+    'font-size': normalizeFontSize(styleMap['font-size'], { min: 16, max: 26 }) || `${DEFAULTS.fontSize + sizeOffset}px`,
     'font-weight': '700',
-    color: normalizeColor(styleMap.color) || DEFAULTS.headingColor,
+    color: normalizeColor(styleMap.color) || 'inherit',
     'line-height': '1.5',
-    'margin-top': sizeOffset >= 8 ? '1.5em' : '1.2em',
-    'margin-bottom': sizeOffset >= 8 ? '0.5em' : '0.4em',
+    ...(normalizeBoxSpacing(styleMap.margin) ? { margin: normalizeBoxSpacing(styleMap.margin)! } : {
+      'margin-top': sizeOffset >= 8 ? '1.5em' : '1.2em',
+      'margin-bottom': sizeOffset >= 8 ? '0.5em' : '0.4em',
+    }),
     'text-align': normalizeTextAlign(styleMap['text-align']) || 'left',
+    ...(normalizeLetterSpacing(styleMap['letter-spacing']) ? { 'letter-spacing': normalizeLetterSpacing(styleMap['letter-spacing'])! } : {}),
   });
 }
 
@@ -319,7 +330,6 @@ function pickInlineStyles(styleMap: Record<string, string>) {
 
   if (/^(700|800|900|bold)$/i.test(styleMap['font-weight'] || '')) {
     normalized['font-weight'] = '700';
-    normalized.color = DEFAULTS.headingColor;
   }
 
   if (/italic/i.test(styleMap['font-style'] || '')) {
@@ -345,6 +355,9 @@ function pickBlockDecorations(styleMap: Record<string, string>) {
   if (borderLeft) decorations['border-left'] = borderLeft;
 
   const padding = normalizeSpacing(styleMap.padding);
+  const margin = normalizeBoxSpacing(styleMap.margin);
+  if (margin) decorations.margin = margin;
+
   if (padding) decorations.padding = padding;
 
   const radius = normalizeRadius(styleMap['border-radius']);
@@ -358,7 +371,11 @@ function pickBlockDecorations(styleMap: Record<string, string>) {
 
 function pickBackgroundDecoration(styleMap: Record<string, string>) {
   const backgroundColor = normalizeColor(styleMap['background-color']) || normalizeSolidBackground(styleMap.background);
-  return backgroundColor ? { 'background-color': backgroundColor } : {};
+  const decoration: Record<string, string> = {};
+  if (backgroundColor) {
+    decoration['background-color'] = backgroundColor;
+  }
+  return decoration;
 }
 
 function normalizeTextAlign(value?: string) {
@@ -397,15 +414,20 @@ function normalizeBorder(value?: string, options: { defaultColor?: string; defau
 }
 
 function normalizeSpacing(value?: string) {
+  return normalizeBoxSpacing(value);
+}
+
+function normalizeBoxSpacing(value?: string) {
   if (!value) return '';
   const parts = value.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0 || parts.length > 4) return '';
 
   const normalized = parts.map((part) => {
+    if (part === '0') return '0';
     const match = part.match(/^(\d{1,2})px$/i);
     if (!match) return '';
     const size = Number(match[1]);
-    if (size < 0 || size > 24) return '';
+    if (size < 0 || size > 48) return '';
     return `${size}px`;
   });
 
@@ -417,11 +439,33 @@ function normalizeRadius(value?: string) {
   const match = value.trim().match(/^(\d{1,2})px$/i);
   if (!match) return '';
   const size = Number(match[1]);
-  if (size < 0 || size > 18) return '';
+  if (size < 0 || size > 24) return '';
   return `${size}px`;
 }
 
-function serializeStyle(style: Record<string, string>) {
+function normalizeFontSize(value?: string, options: { min?: number; max?: number } = {}) {
+  if (!value) return '';
+  const match = value.trim().match(/^(\d{1,2})px$/i);
+  if (!match) return '';
+
+  const size = Number(match[1]);
+  const min = options.min ?? 12;
+  const max = options.max ?? 24;
+  if (size < min || size > max) return '';
+  return `${size}px`;
+}
+
+function normalizeLetterSpacing(value?: string) {
+  if (!value) return '';
+  const match = value.trim().match(/^(-?\d+(?:\.\d+)?)px$/i);
+  if (!match) return '';
+
+  const size = Number(match[1]);
+  if (size < -0.5 || size > 2) return '';
+  return `${size}px`;
+}
+
+function serializeStyle(style: Record<string, string | undefined>) {
   return Object.entries(style)
     .filter(([, value]) => Boolean(value))
     .map(([key, value]) => `${key}: ${value};`)

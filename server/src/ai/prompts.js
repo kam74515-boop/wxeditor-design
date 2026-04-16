@@ -2,6 +2,8 @@
  * AI 提示词模板 - 8个场景
  */
 
+const { buildTemplateStyleGuide } = require('./templateStyleGuide');
+
 const PROMPTS = {
   // 0. 编辑器主链路（内部使用，不出现在 prompts 列表）
   editorChat: {
@@ -19,17 +21,30 @@ const PROMPTS = {
 - 输出内容要适合微信公众号编辑场景，避免多余寒暄
 - 默认采用“轻设计文章风”而不是“营销海报风”
 - 优先组织成标题、导语、小标题、正文段落、列表、引用等可读结构
-- 可以少量使用浅色提示框、强调分割线、单个总结块或克制的标题居中，让版面更有层次
-- 设计点缀控制在 1 到 3 处即可，整体仍然要像文章，而不是一页页海报模块
+- 可以通过深浅块面、留白、图片引导、小号标签标题、单个总结块或克制的标题居中来增加设计感
+- 允许 1 到 3 处明确的视觉设计点，例如深色章节、实色信息框、图注式小标题或整图分节
+- 整体仍然要像精心编辑过的文章，而不是一页页海报模块
 - 除非用户明确要求，否则不要使用大面积居中、渐变背景、阴影卡片、彩色信息块、装饰性分割线、复杂多列布局
 - emoji 只可少量点缀，不要每段都使用，也不要把 emoji 当作小标题前缀
-- 全文改写时，正文内容应像人工排版过的文章，不要生成整页海报或卡片拼贴
+- 全文改写时，正文内容应像人工排版过的文章，可以有设计感，但不要生成整页海报或卡片拼贴
+- 如果用户提供了“参考模板”，你必须继承其视觉语言，并在正文中落地至少 3 处可见设计模块（不是连续纯文本段落）
 - 如果已经使用 set_title 设置文章标题，正文里通常不要再重复一个巨大标题区，除非用户明确要求
 - 除非用户明确要求解释，否则优先输出可执行结果`,
-    buildUserMessage: ({ message, context }) => {
+    buildUserMessage: ({ message, context, templateName, templateDescription, templateContent }) => {
       const parts = [`用户需求：\n${message}`];
       if (context) {
         parts.push(`当前文章内容（截断预览）：\n${String(context).substring(0, 3000)}`);
+      }
+      if (templateName || templateContent) {
+        const styleGuide = buildTemplateStyleGuide(templateContent);
+        parts.push([
+          `参考模板名称：${templateName || '未命名模板'}`,
+          templateDescription ? `参考模板说明：${templateDescription}` : '',
+          styleGuide ? `模板风格提炼：\n${styleGuide}` : '',
+          '请把下面模板当作结构和视觉风格参考来生成，不要直接照抄其中文案内容。',
+          '输出要求：优先调用 replace_editor_content，生成有版式层次的完整 HTML，不要只给纯文本段落。',
+          templateContent ? `参考模板内容（截断预览）：\n${String(templateContent).substring(0, 8000)}` : '',
+        ].filter(Boolean).join('\n'));
       }
       return parts.join('\n\n');
     },

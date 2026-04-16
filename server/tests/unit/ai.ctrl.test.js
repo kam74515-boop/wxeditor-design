@@ -267,6 +267,46 @@ describe('AI controller /api/ai/chat', () => {
       })
     );
   });
+
+  it('passes template context into editor prompt params', async () => {
+    const stream = new EventEmitter();
+    let axiosReadyResolve;
+    const axiosReady = new Promise((resolve) => {
+      axiosReadyResolve = resolve;
+    });
+    axios.mockImplementation(async () => {
+      axiosReadyResolve();
+      return { data: stream };
+    });
+
+    const responsePromise = request(app)
+      .post('/api/ai/chat')
+      .send({
+        message: '基于模板写一篇发布稿',
+        templateName: '先锋黑色画册',
+        templateDescription: '深色专题模板',
+        templateContent: '<section style="background:#000;color:#fff;"><h2>模板标题</h2></section>',
+      })
+      .then((res) => res);
+
+    await axiosReady;
+    await new Promise((resolve) => setImmediate(resolve));
+    stream.emit('end');
+
+    const res = await responsePromise;
+
+    expect(res.status).toBe(200);
+    expect(createChatMessages).toHaveBeenCalledWith(
+      expect.objectContaining({ key: 'editorChat' }),
+      expect.objectContaining({
+        message: '基于模板写一篇发布稿',
+        templateName: '先锋黑色画册',
+        templateDescription: '深色专题模板',
+        templateContent: '<section style="background:#000;color:#fff;"><h2>模板标题</h2></section>',
+      }),
+      []
+    );
+  });
 });
 
 describe('AI controller /api/ai/history/:documentId/tool-runs', () => {

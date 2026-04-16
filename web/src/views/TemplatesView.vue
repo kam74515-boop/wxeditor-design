@@ -13,7 +13,12 @@
 
     <div class="templates-view">
       <header class="page-header">
-        <h2 class="page-title">官方模板库</h2>
+        <div class="page-heading">
+          <div class="tool-tabs">
+            <div class="tab-item active" style="background-color: #BAE6FD;">模版</div>
+          </div>
+          <h2 class="page-title">官方模板库</h2>
+        </div>
         <div class="header-actions">
           <div class="search-box">
             <el-icon class="search-icon"><Search /></el-icon>
@@ -318,6 +323,41 @@ function handleClearSearch() {
   margin-bottom: $space-xl;
 }
 
+.page-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tool-tabs {
+  display: flex;
+  align-items: flex-end;
+}
+
+.tab-item {
+  min-width: 88px;
+  height: 40.4px;
+  padding: 0 18px;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: $layout-sider-dark;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  position: relative;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  transition: all 0.2s;
+  opacity: 1;
+
+  &.active {
+    height: 46.4px;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.03);
+  }
+}
+
 .page-title {
   font-size: 1.25rem;
   font-weight: 800;
@@ -558,6 +598,7 @@ function handleClearSearch() {
 @media (max-width: 768px) {
   .page-header {
     flex-direction: column;
+    align-items: stretch;
   }
 
   .header-actions {

@@ -103,30 +103,30 @@ function normalizeAgentHtml(content, options = {}) {
  * 为HTML内容添加内联样式
  */
 function addInlineStyles(html, opts) {
-  const baseStyle = `font-size: ${opts.fontSize}px; line-height: ${opts.lineHeight}; color: ${opts.color};`;
+  const baseStyle = `font-size: ${opts.fontSize}px; line-height: ${opts.lineHeight}; color: inherit;`;
 
   // 替换 <p> 标签，添加内联样式
   html = html.replace(/<p(?![^>]*style)/gi, `<p style="${baseStyle} margin-bottom: ${opts.paragraphSpacing}; text-align: left;"`);
 
   // 替换 <h1> 标签
   html = html.replace(/<h1(?![^>]*style)/gi,
-    `<h1 style="font-size: ${opts.fontSize + 8}px; font-weight: bold; color: ${opts.headingColor}; line-height: ${opts.lineHeight}; margin-top: 1.5em; margin-bottom: 0.5em;"`);
+    `<h1 style="font-size: ${opts.fontSize + 8}px; font-weight: bold; color: inherit; line-height: ${opts.lineHeight}; margin-top: 1.5em; margin-bottom: 0.5em;"`);
 
   // 替换 <h2> 标签
   html = html.replace(/<h2(?![^>]*style)/gi,
-    `<h2 style="font-size: ${opts.fontSize + 4}px; font-weight: bold; color: ${opts.headingColor}; line-height: ${opts.lineHeight}; margin-top: 1.2em; margin-bottom: 0.4em;"`);
+    `<h2 style="font-size: ${opts.fontSize + 4}px; font-weight: bold; color: inherit; line-height: ${opts.lineHeight}; margin-top: 1.2em; margin-bottom: 0.4em;"`);
 
   // 替换 <h3> 标签
   html = html.replace(/<h3(?![^>]*style)/gi,
-    `<h3 style="font-size: ${opts.fontSize + 2}px; font-weight: bold; color: ${opts.headingColor}; line-height: ${opts.lineHeight}; margin-top: 1em; margin-bottom: 0.3em;"`);
+    `<h3 style="font-size: ${opts.fontSize + 2}px; font-weight: bold; color: inherit; line-height: ${opts.lineHeight}; margin-top: 1em; margin-bottom: 0.3em;"`);
 
   // 替换 <strong>/<b> 标签
   html = html.replace(/<(strong|b)(?![^>]*style)/gi,
-    `<$1 style="font-weight: bold; color: ${opts.headingColor};"`);
+    `<$1 style="font-weight: bold; color: inherit;"`);
 
   // 替换 <blockquote> 标签
   html = html.replace(/<blockquote(?![^>]*style)/gi,
-    `<blockquote style="border-left: 3px solid #e0e0e0; padding-left: 1em; margin: 1em 0; color: #666; font-size: ${opts.fontSize - 1}px;"`);
+    `<blockquote style="border-left: 3px solid #e0e0e0; padding-left: 1em; margin: 1em 0; color: inherit; font-size: ${opts.fontSize - 1}px;"`);
 
   // 替换 <ul>/<ol> 标签
   html = html.replace(/<(ul|ol)(?![^>]*style)/gi,
@@ -160,7 +160,7 @@ ${html}
  */
 function textToWechatFragment(text, opts = {}) {
   const options = { ...DEFAULT_OPTIONS, ...opts };
-  const baseStyle = `font-size: ${options.fontSize}px; line-height: ${options.lineHeight}; color: ${options.color};`;
+  const baseStyle = `font-size: ${options.fontSize}px; line-height: ${options.lineHeight}; color: inherit;`;
 
   return text
     .split(/\n{2,}/)
@@ -229,8 +229,8 @@ function buildSectionStyle(opts, styleMap = {}) {
     'box-sizing': 'border-box',
     'font-size': `${opts.fontSize}px`,
     'line-height': String(opts.lineHeight),
-    color: opts.color,
-    'margin-bottom': opts.paragraphSpacing,
+    color: normalizeColor(styleMap.color) || 'inherit',
+    ...(normalizeBoxSpacing(styleMap.margin) ? { margin: normalizeBoxSpacing(styleMap.margin) } : { 'margin-bottom': opts.paragraphSpacing }),
     ...pickBlockDecorations(styleMap),
   });
 }
@@ -239,31 +239,37 @@ function buildBlockStyle(opts, styleMap = {}) {
   return serializeStyle({
     'font-size': `${opts.fontSize}px`,
     'line-height': String(opts.lineHeight),
-    color: opts.color,
-    'margin-bottom': opts.paragraphSpacing,
+    color: normalizeColor(styleMap.color) || 'inherit',
+    ...(normalizeBoxSpacing(styleMap.margin) ? { margin: normalizeBoxSpacing(styleMap.margin) } : { 'margin-bottom': opts.paragraphSpacing }),
     ...pickBlockDecorations(styleMap),
   });
 }
 
 function buildParagraphStyle(opts, styleMap = {}) {
   return serializeStyle({
-    'font-size': `${opts.fontSize}px`,
+    'font-size': normalizeFontSize(styleMap['font-size'], { min: 12, max: 18 }) || `${opts.fontSize}px`,
     'line-height': String(opts.lineHeight),
-    color: opts.color,
-    'margin-bottom': opts.paragraphSpacing,
+    color: normalizeColor(styleMap.color) || 'inherit',
+    ...(normalizeBoxSpacing(styleMap.margin) ? { margin: normalizeBoxSpacing(styleMap.margin) } : { 'margin-bottom': opts.paragraphSpacing }),
     'text-align': normalizeTextAlign(styleMap['text-align']) || 'left',
+    ...(normalizeLetterSpacing(styleMap['letter-spacing']) ? { 'letter-spacing': normalizeLetterSpacing(styleMap['letter-spacing']) } : {}),
+    ...pickBlockDecorations(styleMap),
+    ...pickAllowedInlineStyle(styleMap),
   });
 }
 
 function buildHeadingStyle(opts, sizeOffset, styleMap = {}) {
   return serializeStyle({
-    'font-size': `${opts.fontSize + sizeOffset}px`,
+    'font-size': normalizeFontSize(styleMap['font-size'], { min: 16, max: 26 }) || `${opts.fontSize + sizeOffset}px`,
     'font-weight': '700',
-    color: normalizeColor(styleMap.color) || opts.headingColor,
+    color: normalizeColor(styleMap.color) || 'inherit',
     'line-height': '1.5',
-    'margin-top': '1.2em',
-    'margin-bottom': '0.4em',
+    ...(normalizeBoxSpacing(styleMap.margin) ? { margin: normalizeBoxSpacing(styleMap.margin) } : {
+      'margin-top': sizeOffset >= 8 ? '1.5em' : '1.2em',
+      'margin-bottom': sizeOffset >= 8 ? '0.5em' : '0.4em',
+    }),
     'text-align': normalizeTextAlign(styleMap['text-align']) || 'left',
+    ...(normalizeLetterSpacing(styleMap['letter-spacing']) ? { 'letter-spacing': normalizeLetterSpacing(styleMap['letter-spacing']) } : {}),
   });
 }
 
@@ -271,7 +277,7 @@ function buildListStyle(opts) {
   return serializeStyle({
     'font-size': `${opts.fontSize}px`,
     'line-height': String(opts.lineHeight),
-    color: opts.color,
+    color: 'inherit',
     'padding-left': '1.5em',
     'margin-bottom': opts.paragraphSpacing,
   });
@@ -281,7 +287,7 @@ function buildListItemStyle(opts) {
   return serializeStyle({
     'font-size': `${opts.fontSize}px`,
     'line-height': String(opts.lineHeight),
-    color: opts.color,
+    color: 'inherit',
     'margin-bottom': '0.35em',
   });
 }
@@ -290,8 +296,8 @@ function buildBlockquoteStyle(opts, styleMap = {}) {
   return serializeStyle({
     'border-left': normalizeBorder(styleMap['border-left'], { defaultColor: '#d6d9de', defaultWidth: 3, onlyLeft: true }) || '3px solid #d6d9de',
     'padding-left': '1em',
-    margin: '1em 0',
-    color: '#555555',
+    ...(normalizeBoxSpacing(styleMap.margin) ? { margin: normalizeBoxSpacing(styleMap.margin) } : { margin: '1em 0' }),
+    color: normalizeColor(styleMap.color) || 'inherit',
     'font-size': `${Math.max(14, opts.fontSize - 1)}px`,
     'line-height': String(opts.lineHeight),
     ...pickBackgroundDecoration(styleMap),
@@ -311,7 +317,7 @@ function buildDividerStyle(_opts, styleMap = {}) {
 function buildStrongStyle(opts, styleMap = {}) {
   return serializeStyle({
     'font-weight': '700',
-    color: normalizeColor(styleMap.color) || opts.headingColor,
+    color: normalizeColor(styleMap.color) || 'inherit',
   });
 }
 
@@ -327,8 +333,10 @@ function buildSpanStyle(_opts, styleMap = {}) {
     ...pickBackgroundDecoration(styleMap),
     ...(normalizeColor(styleMap.color) ? { color: normalizeColor(styleMap.color) } : {}),
     ...(normalizeRadius(styleMap['border-radius']) ? { 'border-radius': normalizeRadius(styleMap['border-radius']) } : {}),
-    ...(normalizeSpacing(styleMap.padding) ? { padding: normalizeSpacing(styleMap.padding) } : {}),
+    ...(normalizeBoxSpacing(styleMap.padding) ? { padding: normalizeBoxSpacing(styleMap.padding) } : {}),
     ...(normalizeTextAlign(styleMap['text-align']) ? { 'text-align': normalizeTextAlign(styleMap['text-align']) } : {}),
+    ...(normalizeFontSize(styleMap['font-size'], { min: 12, max: 18 }) ? { 'font-size': normalizeFontSize(styleMap['font-size'], { min: 12, max: 18 }) } : {}),
+    ...(normalizeLetterSpacing(styleMap['letter-spacing']) ? { 'letter-spacing': normalizeLetterSpacing(styleMap['letter-spacing']) } : {}),
   });
 }
 
@@ -339,13 +347,14 @@ function buildLinkStyle() {
   });
 }
 
-function buildImageStyle() {
+function buildImageStyle(_opts, styleMap = {}) {
   return serializeStyle({
     display: 'block',
     'max-width': '100%',
     width: '100%',
     height: 'auto',
-    margin: '1em auto',
+    ...(normalizeBoxSpacing(styleMap.margin) ? { margin: normalizeBoxSpacing(styleMap.margin) } : { margin: '1em auto' }),
+    ...(normalizeRadius(styleMap['border-radius']) ? { 'border-radius': normalizeRadius(styleMap['border-radius']) } : {}),
   });
 }
 
@@ -363,7 +372,7 @@ function buildTableCellStyle(opts, styleMap = {}) {
     padding: '8px',
     'font-size': `${opts.fontSize}px`,
     'line-height': String(opts.lineHeight),
-    color: styleMap.color && /^#(?:[0-9a-f]{3}){1,2}$/i.test(styleMap.color) ? styleMap.color : opts.color,
+    color: normalizeColor(styleMap.color) || 'inherit',
     ...pickBackgroundDecoration(styleMap),
   });
 }
@@ -409,6 +418,9 @@ function pickBlockDecorations(styleMap = {}) {
   if (borderLeft) decorations['border-left'] = borderLeft;
 
   const padding = normalizeSpacing(styleMap.padding);
+  const margin = normalizeBoxSpacing(styleMap.margin);
+  if (margin) decorations.margin = margin;
+
   if (padding) decorations.padding = padding;
 
   const radius = normalizeRadius(styleMap['border-radius']);
@@ -465,15 +477,20 @@ function normalizeBorder(value, options = {}) {
 }
 
 function normalizeSpacing(value) {
+  return normalizeBoxSpacing(value);
+}
+
+function normalizeBoxSpacing(value) {
   if (typeof value !== 'string') return '';
   const parts = value.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0 || parts.length > 4) return '';
 
   const normalized = parts.map((part) => {
+    if (part === '0') return '0';
     const match = part.match(/^(\d{1,2})(px)$/i);
     if (!match) return '';
     const size = Number(match[1]);
-    if (size < 0 || size > 24) return '';
+    if (size < 0 || size > 48) return '';
     return `${size}px`;
   });
 
@@ -485,7 +502,29 @@ function normalizeRadius(value) {
   const match = value.trim().match(/^(\d{1,2})px$/i);
   if (!match) return '';
   const size = Number(match[1]);
-  if (size < 0 || size > 18) return '';
+  if (size < 0 || size > 24) return '';
+  return `${size}px`;
+}
+
+function normalizeFontSize(value, options = {}) {
+  if (typeof value !== 'string') return '';
+  const match = value.trim().match(/^(\d{1,2})px$/i);
+  if (!match) return '';
+
+  const size = Number(match[1]);
+  const min = options.min || 12;
+  const max = options.max || 24;
+  if (size < min || size > max) return '';
+  return `${size}px`;
+}
+
+function normalizeLetterSpacing(value) {
+  if (typeof value !== 'string') return '';
+  const match = value.trim().match(/^(-?\d+(?:\.\d+)?)px$/i);
+  if (!match) return '';
+
+  const size = Number(match[1]);
+  if (size < -0.5 || size > 2) return '';
   return `${size}px`;
 }
 
